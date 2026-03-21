@@ -1,0 +1,267 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Google Font ─────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* ─── Brand CSS variables (default = PLG green) ──────────── */
+:root {
+  --color-primary: #06d373;
+  --color-primary-light: #33dc8c;
+  --color-primary-dark: #04a859;
+  --color-primary-fg: #0a1a10;   /* text ON primary bg */
+
+  /* Light mode surface colours */
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-surface-2: #f1f5f9;
+  --color-border: #e2e8f0;
+  --color-text: #0f172a;
+  --color-text-muted: #64748b;
+  --color-text-subtle: #94a3b8;
+
+  /* Sidebar */
+  --color-sidebar-bg: #ffffff;
+  --color-sidebar-border: #e2e8f0;
+  --color-sidebar-text: #334155;
+  --color-sidebar-active-bg: rgba(6, 211, 115, 0.08);
+  --color-sidebar-active-text: #04a859;
+}
+
+.dark {
+  --color-bg: #0a0b0d;
+  --color-surface: #111318;
+  --color-surface-2: #1a1d24;
+  --color-border: #252830;
+  --color-text: #f1f5f9;
+  --color-text-muted: #94a3b8;
+  --color-text-subtle: #64748b;
+
+  --color-sidebar-bg: #0f1117;
+  --color-sidebar-border: #1e2128;
+  --color-sidebar-text: #cbd5e1;
+  --color-sidebar-active-bg: rgba(6, 211, 115, 0.1);
+  --color-sidebar-active-text: var(--color-primary);
+}
+
+/* ─── O2 Arena brand ──────────────────────────────────────── */
+[data-brand="o2arena"] {
+  --color-primary: #0066cc;
+  --color-primary-light: #3388dd;
+  --color-primary-dark: #0052a3;
+  --color-primary-fg: #ffffff;
+  --color-sidebar-active-bg: rgba(0, 102, 204, 0.08);
+  --color-sidebar-active-text: #0066cc;
+}
+
+/* ─── T-Arena brand ───────────────────────────────────────── */
+[data-brand="tarena"] {
+  --color-primary: #e20074;
+  --color-primary-light: #ea3390;
+  --color-primary-dark: #b5005c;
+  --color-primary-fg: #ffffff;
+  --color-sidebar-active-bg: rgba(226, 0, 116, 0.08);
+  --color-sidebar-active-text: #e20074;
+}
+
+/* ─── Slavia brand ────────────────────────────────────────── */
+[data-brand="slavia"] {
+  --color-primary: #cc0000;
+  --color-primary-light: #dd3333;
+  --color-primary-dark: #a30000;
+  --color-primary-fg: #ffffff;
+  --color-sidebar-active-bg: rgba(204, 0, 0, 0.08);
+  --color-sidebar-active-text: #cc0000;
+}
+
+/* ─── Base styles ─────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Scrollbar ───────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-text-subtle); }
+
+/* ─── Focus ring ──────────────────────────────────────────── */
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* ─── Utility classes ─────────────────────────────────────── */
+@layer components {
+  .surface {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+  }
+
+  .surface-2 {
+    background-color: var(--color-surface-2);
+  }
+
+  .text-base-color { color: var(--color-text); }
+  .text-muted { color: var(--color-text-muted); }
+  .text-subtle { color: var(--color-text-subtle); }
+
+  .btn-primary {
+    background-color: var(--color-primary);
+    color: var(--color-primary-fg);
+    @apply px-4 py-2 rounded-lg font-medium text-sm transition-all duration-150 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background-color: var(--color-primary-dark);
+  }
+  .btn-primary:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  .btn-secondary {
+    background-color: var(--color-surface-2);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    @apply px-4 py-2 rounded-lg font-medium text-sm transition-all duration-150 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background-color: var(--color-border);
+  }
+
+  .btn-ghost {
+    color: var(--color-text-muted);
+    @apply px-3 py-1.5 rounded-lg font-medium text-sm transition-all duration-150 flex items-center gap-2;
+  }
+  .btn-ghost:hover {
+    background-color: var(--color-surface-2);
+    color: var(--color-text);
+  }
+
+  .input-field {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    @apply w-full px-3 py-2.5 rounded-lg text-sm transition-colors duration-150;
+  }
+  .input-field::placeholder {
+    color: var(--color-text-subtle);
+  }
+  .input-field:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(6, 211, 115, 0.1);
+  }
+
+  .card {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    @apply rounded-xl;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+}
+
+/* ─── Seat map styles ─────────────────────────────────────── */
+.seat-available {
+  background-color: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+.seat-available:hover {
+  background-color: var(--color-primary-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary-fg);
+  transform: scale(1.15);
+}
+.seat-selected {
+  background-color: var(--color-primary);
+  border: 1px solid var(--color-primary-dark);
+  color: var(--color-primary-fg);
+  cursor: pointer;
+  transform: scale(1.1);
+}
+.seat-unavailable {
+  background-color: var(--color-surface-2);
+  border: 1px solid transparent;
+  color: var(--color-text-subtle);
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+/* ─── Wizard step indicator ───────────────────────────────── */
+.step-active .step-circle {
+  background-color: var(--color-primary);
+  color: var(--color-primary-fg);
+  border-color: var(--color-primary);
+}
+.step-done .step-circle {
+  background-color: var(--color-primary);
+  color: var(--color-primary-fg);
+  border-color: var(--color-primary);
+}
+.step-pending .step-circle {
+  background-color: var(--color-surface-2);
+  color: var(--color-text-subtle);
+  border-color: var(--color-border);
+}
+
+/* ─── Animations ──────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes checkmark {
+  from { stroke-dashoffset: 100; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes popIn {
+  0% { transform: scale(0.5); opacity: 0; }
+  70% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-fade-in { animation: fadeIn 0.3s ease forwards; }
+.animate-slide-up { animation: slideUp 0.4s ease forwards; }
+.animate-pop-in { animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+/* ─── Arena map section hover ─────────────────────────────── */
+.arena-section-allocated {
+  fill: var(--color-primary);
+  fill-opacity: 0.25;
+  stroke: var(--color-primary);
+  stroke-width: 1.5;
+  cursor: pointer;
+  transition: fill-opacity 0.15s;
+}
+.arena-section-allocated:hover {
+  fill-opacity: 0.45;
+}
+.arena-section-selected {
+  fill: var(--color-primary);
+  fill-opacity: 0.7;
+  stroke: var(--color-primary-dark);
+  stroke-width: 2;
+}
+.arena-section-neutral {
+  fill: var(--color-surface-2);
+  fill-opacity: 1;
+  stroke: var(--color-border);
+  stroke-width: 1;
+}

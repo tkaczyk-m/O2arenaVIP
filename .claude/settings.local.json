@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:www.plgmoments.com)",
+      "WebFetch(domain:www.o2.cz)",
+      "WebFetch(domain:arenabrno.cz)",
+      "WebFetch(domain:www.slavia.cz)",
+      "Read(//Users/tkaczm01/Desktop/**)",
+      "Bash(npx create-next-app@latest O2arenaVIP --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-git)",
+      "Bash(export PATH=\"/usr/local/bin:/opt/homebrew/bin:$PATH\")",
+      "Bash(npm --version)",
+      "Read(//usr/local/bin/**)",
+      "Read(//Users/tkaczm01/.nvm/alias/**)",
+      "Bash(command -v node)",
+      "Bash(echo \"PATH: $PATH\")",
+      "Bash(mdfind -name node -onlyin /usr/local)",
+      "Bash(mdfind -name node -onlyin /opt)",
+      "Bash(cat /Users/tkaczm01/o2arena-vip/src/*.tsx)",
+      "Bash(zsh -i -c 'which node && node --version && which npm')",
+      "Bash(npm install:*)",
+      "Bash(ls ~/.nvm/versions/node/*/bin/node)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"Initial commit: B2B VIP Partner Portal:*)"
+    ]
+  }
+}
