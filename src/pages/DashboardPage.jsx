@@ -51,13 +51,13 @@ function EventCard({ event, t, locale }) {
   const isAuto = event.displayStatus === 'AUTO_CONFIRMED'
   const isConfirmed = event.displayStatus === 'CONFIRMED'
   const isLapsed = event.displayStatus === 'LAPSED'
+  const isInfo = event.displayStatus === 'INFO'
 
-  const statusLabel = t(`event.status.${event.displayStatus}`)
+  const statusLabel = isInfo ? 'Připravujeme' : t(`event.status.${event.displayStatus}`)
 
   const statusColor = isPending ? 'amber'
     : isAuto ? 'blue'
     : isConfirmed ? 'green'
-    : isLapsed ? 'gray'
     : 'gray'
 
   // Collect unique kinds across allocations
@@ -131,26 +131,36 @@ function EventCard({ event, t, locale }) {
           )}
 
           {/* CTA */}
-          <Link
-            to={`/events/${event.id}`}
-            className={clsx(
-              'flex items-center justify-center gap-1.5 w-full py-2 rounded-lg text-sm font-medium transition-all duration-150',
-              isLapsed ? 'opacity-50 pointer-events-none' : ''
-            )}
-            style={{
-              backgroundColor: isPending ? 'var(--color-primary)' : 'var(--color-surface-2)',
-              color: isPending ? 'var(--color-primary-fg)' : 'var(--color-text)',
-              border: isPending ? 'none' : '1px solid var(--color-border)',
-            }}
-          >
-            {isPending ? (
-              <><Ticket size={14} />{t('event.claimSeats')}</>
-            ) : isAuto ? (
-              <><Zap size={14} />{t('event.viewTickets')}</>
-            ) : (
-              <><ChevronRight size={14} />Zobrazit detail</>
-            )}
-          </Link>
+          {isInfo ? (
+            <div
+              className="flex items-center justify-center gap-1.5 w-full py-2 rounded-lg text-sm"
+              style={{ backgroundColor: 'var(--color-surface-2)', color: 'var(--color-text-subtle)', border: '1px solid var(--color-border)' }}
+            >
+              <Calendar size={14} />
+              Připravujeme alokaci
+            </div>
+          ) : (
+            <Link
+              to={`/events/${event.id}`}
+              className={clsx(
+                'flex items-center justify-center gap-1.5 w-full py-2 rounded-lg text-sm font-medium transition-all duration-150',
+                isLapsed ? 'opacity-50 pointer-events-none' : ''
+              )}
+              style={{
+                backgroundColor: isPending ? 'var(--color-primary)' : 'var(--color-surface-2)',
+                color: isPending ? 'var(--color-primary-fg)' : 'var(--color-text)',
+                border: isPending ? 'none' : '1px solid var(--color-border)',
+              }}
+            >
+              {isPending ? (
+                <><Ticket size={14} />{t('event.claimSeats')}</>
+              ) : isAuto ? (
+                <><Zap size={14} />{t('event.viewTickets')}</>
+              ) : (
+                <><ChevronRight size={14} />Zobrazit detail</>
+              )}
+            </Link>
+          )}
         </div>
       </div>
     </div>
@@ -183,7 +193,7 @@ const FILTERS = [
 ]
 
 export default function DashboardPage() {
-  const { t, currentPartner, locale } = useApp()
+  const { t, currentPartner, locale, brand } = useApp()
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -192,11 +202,11 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!currentPartner) return
     setLoading(true)
-    getEventsForPartner(currentPartner.id).then(data => {
+    getEventsForPartner(currentPartner.id, brand.key).then(data => {
       setEvents(data)
       setLoading(false)
     })
-  }, [currentPartner])
+  }, [currentPartner, brand])
 
   const filtered = useMemo(() => {
     return events.filter(e => {

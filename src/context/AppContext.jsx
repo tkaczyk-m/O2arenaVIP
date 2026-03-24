@@ -1,16 +1,22 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react'
 import { detectBrand, applyBrandToDOM } from '@/lib/brands'
 import { getT } from '@/lib/i18n'
-import { getMockSession, getCurrentUser, getCurrentPartner, clearMockSession } from '@/lib/mockData'
+import { getMockSession, getCurrentUser, clearMockSession } from '@/lib/mockData'
+import { useAdmin } from '@/context/AdminContext'
 
 const AppContext = createContext(null)
 
 export function AppProvider({ children }) {
+  const { partners } = useAdmin()
   const [brand, setBrand] = useState(() => detectBrand())
   const [locale, setLocale] = useState(() => localStorage.getItem('vip_locale') || 'cs')
   const [theme, setTheme] = useState(() => localStorage.getItem('vip_theme') || 'light')
   const [currentUser, setCurrentUser] = useState(() => getCurrentUser())
-  const [currentPartner, setCurrentPartner] = useState(() => getCurrentPartner())
+
+  const currentPartner = useMemo(
+    () => partners.find(p => p.id === currentUser?.partnerId) ?? null,
+    [partners, currentUser]
+  )
 
   // Apply brand to DOM on mount and change
   useEffect(() => {
@@ -44,9 +50,8 @@ export function AppProvider({ children }) {
     setLocale(newLocale)
   }, [])
 
-  const login = useCallback((user, partner) => {
+  const login = useCallback((user) => {
     setCurrentUser(user)
-    setCurrentPartner(partner)
   }, [])
 
   const logout = useCallback(() => {
@@ -57,7 +62,6 @@ export function AppProvider({ children }) {
 
   const refreshSession = useCallback(() => {
     setCurrentUser(getCurrentUser())
-    setCurrentPartner(getCurrentPartner())
   }, [])
 
   return (

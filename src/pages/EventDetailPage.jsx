@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Calendar, Clock, MapPin, ArrowLeft, Ticket, Zap, AlertCircle, ChevronRight } from 'lucide-react'
+import { Calendar, Clock, MapPin, ArrowLeft, Ticket, Zap, AlertCircle, ChevronRight, Download, Users, Tag } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import { getEventDetail, getEventAllocations } from '@/lib/mockData'
 import StatusBadge from '@/components/shared/StatusBadge'
@@ -189,9 +189,26 @@ export default function EventDetailPage() {
             </div>
             <div className="flex items-center gap-2" style={{ color: 'var(--color-text-muted)' }}>
               <MapPin size={15} className="shrink-0" style={{ color: 'var(--color-primary)' }} />
-              <span>{currentPartner ? 'O2 Arena Praha' : '—'}</span>
+              <span>{event.venue?.name || '—'}</span>
             </div>
           </div>
+
+          {/* Additional dates */}
+          {event.additionalDates?.length > 0 && (
+            <div className="mt-3 pt-3 border-t" style={{ borderColor: 'var(--color-border)' }}>
+              <p className="text-xs font-medium mb-2" style={{ color: 'var(--color-text-muted)' }}>Další termíny:</p>
+              <div className="flex flex-wrap gap-2">
+                {event.additionalDates.map((d, i) => {
+                  const { date: ad, time: at } = formatDateTime(d.date, locale)
+                  return (
+                    <span key={i} className="badge text-xs" style={{ backgroundColor: 'var(--color-surface-2)', color: 'var(--color-text-muted)' }}>
+                      {ad} · {at}
+                    </span>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Option deadline banner */}
           {hasPending && soonestDeadline && (
@@ -217,6 +234,87 @@ export default function EventDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Description */}
+      {event.description && (
+        <div className="card rounded-xl p-5 mb-6">
+          <h2 className="text-sm font-semibold mb-2" style={{ color: 'var(--color-text)' }}>O události</h2>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>{event.description}</p>
+        </div>
+      )}
+
+      {/* Venue + Organizer */}
+      {(event.venue?.name || event.organizer) && (
+        <div className="card rounded-xl p-5 mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {event.venue?.name && (
+            <div>
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <MapPin size={13} style={{ color: 'var(--color-primary)' }} />
+                <span className="text-xs font-semibold" style={{ color: 'var(--color-text)' }}>Místo konání</span>
+              </div>
+              <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+                {event.venue.name}
+                {event.venue.address && <><br />{event.venue.address}</>}
+                {event.venue.city && <><br />{event.venue.city}</>}
+              </p>
+            </div>
+          )}
+          {event.organizer && (
+            <div>
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Users size={13} style={{ color: 'var(--color-primary)' }} />
+                <span className="text-xs font-semibold" style={{ color: 'var(--color-text)' }}>Organizátor</span>
+              </div>
+              <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{event.organizer}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Prices */}
+      {event.prices?.length > 0 && (
+        <div className="card rounded-xl p-5 mb-6">
+          <div className="flex items-center gap-1.5 mb-3">
+            <Tag size={13} style={{ color: 'var(--color-primary)' }} />
+            <h2 className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Ceník VIP</h2>
+          </div>
+          <div className="space-y-2">
+            {event.prices.map((p, i) => (
+              <div key={i} className="flex items-center justify-between text-sm">
+                <span style={{ color: 'var(--color-text-muted)' }}>{p.label}</span>
+                <span className="font-semibold" style={{ color: 'var(--color-text)' }}>
+                  {p.amount.toLocaleString('cs-CZ')} Kč
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Downloads */}
+      {event.downloads?.length > 0 && (
+        <div className="card rounded-xl p-5 mb-6">
+          <div className="flex items-center gap-1.5 mb-3">
+            <Download size={13} style={{ color: 'var(--color-primary)' }} />
+            <h2 className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Ke stažení</h2>
+          </div>
+          <div className="space-y-2">
+            {event.downloads.map((d, i) => (
+              <a
+                key={i}
+                href={d.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-sm hover:underline"
+                style={{ color: 'var(--color-primary)' }}
+              >
+                <Download size={12} />
+                {d.label}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Allocations */}
       {allocations.length > 0 && (

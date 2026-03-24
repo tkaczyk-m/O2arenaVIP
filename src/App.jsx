@@ -10,6 +10,14 @@ import AccountOrdersPage from '@/pages/account/OrdersPage'
 import AccountTicketsPage from '@/pages/account/TicketsPage'
 import AccountUsersPage from '@/pages/account/UsersPage'
 import AccountReportingPage from '@/pages/account/ReportingPage'
+import AdminShell from '@/components/admin/AdminShell'
+import AdminProtectedRoute from '@/components/admin/AdminProtectedRoute'
+import AdminLoginPage from '@/pages/admin/AdminLoginPage'
+import AdminEventsPage from '@/pages/admin/AdminEventsPage'
+import AdminEventFormPage from '@/pages/admin/AdminEventFormPage'
+import { initStore } from '@/lib/eventStore'
+
+initStore()
 
 function ProtectedRoute({ children }) {
   const { currentUser } = useApp()
@@ -22,6 +30,23 @@ function AppRoutes() {
 
   return (
     <Routes>
+      {/* ── Admin routes (no AppProvider context needed) ── */}
+      <Route path="/admin/login" element={<AdminLoginPage />} />
+      <Route
+        path="/admin/*"
+        element={
+          <AdminProtectedRoute>
+            <AdminShell />
+          </AdminProtectedRoute>
+        }
+      >
+        <Route index element={<Navigate to="/admin/events" replace />} />
+        <Route path="events" element={<AdminEventsPage />} />
+        <Route path="events/new" element={<AdminEventFormPage />} />
+        <Route path="events/:id/edit" element={<AdminEventFormPage />} />
+      </Route>
+
+      {/* ── B2B SPA routes ── */}
       <Route
         path="/login"
         element={currentUser ? <Navigate to="/dashboard" replace /> : <LoginPage />}

@@ -1,3 +1,5 @@
+import { getPublishedEvents, getEvent as storeGetEvent } from '@/lib/eventStore'
+
 /**
  * Complete mock data for the VIP Partner Portal.
  * Three personas with different allocation types.
@@ -103,18 +105,27 @@ export const SECTION_UNAVAILABLE = {
 export const PARTNERS = {
   barbora: {
     id: 'barbora',
+    brandId: 'o2arena',
     userId: 'user-barbora',
     companyName: 'ŠKODA Auto a.s.',
     ico: '00177041',
+    address: 'tř. Václava Klementa 869, 293 01 Mladá Boleslav',
+    contactPerson: {
+      firstName: 'Barbora',
+      lastName: 'Chaloupecká',
+      email: 'barbora.chaloupecka@skoda-auto.cz',
+    },
     contract: {
       id: 'VIP-2024-0089',
       type: 'Premium Skybox',
       validFrom: '2024-01-01',
       validTo: '2026-12-31',
+      amountCZK: 1200000,
       accountManagerName: 'Petra Novotná',
       accountManagerEmail: 'petra.novotna@arena.cz',
       accountManagerPhone: '+420 602 123 456',
     },
+    seats: { skyboxes: ['SB-05'], clubSections: [] },
     allocationKinds: ['TYPE1'],
     type1Allocation: {
       skyboxes: ['SB-05'],
@@ -125,18 +136,27 @@ export const PARTNERS = {
   },
   ludek: {
     id: 'ludek',
+    brandId: 'o2arena',
     userId: 'user-ludek',
     companyName: 'Kooperativa pojišťovna, a.s.',
     ico: '47116617',
+    address: 'Templová 747, 110 01 Praha 1',
+    contactPerson: {
+      firstName: 'Luděk',
+      lastName: 'Procházka',
+      email: 'ludek.prochazka@koop.cz',
+    },
     contract: {
       id: 'VIP-2023-0047',
       type: 'Klub Premium',
       validFrom: '2023-07-01',
       validTo: '2025-06-30',
+      amountCZK: 850000,
       accountManagerName: 'Tomáš Říha',
       accountManagerEmail: 'tomas.riha@arena.cz',
       accountManagerPhone: '+420 603 456 789',
     },
+    seats: { skyboxes: [], clubSections: ['222'] },
     allocationKinds: ['TYPE1', 'TYPE2', 'TYPE3'],
     type1Allocation: {
       skyboxes: [],
@@ -147,18 +167,27 @@ export const PARTNERS = {
   },
   martin: {
     id: 'martin',
+    brandId: 'o2arena',
     userId: 'user-martin',
     companyName: 'Hot Peppers s.r.o.',
     ico: '08941234',
+    address: 'Korunní 2569/108, 101 00 Praha 10',
+    contactPerson: {
+      firstName: 'Martin',
+      lastName: 'Gremlica',
+      email: 'martin.gremlica@hotpeppers.cz',
+    },
     contract: {
       id: 'VIP-2025-0012',
       type: 'Benefit Partner',
       validFrom: '2025-01-01',
       validTo: '2025-12-31',
+      amountCZK: 450000,
       accountManagerName: 'Jana Horáčková',
       accountManagerEmail: 'jana.horackova@arena.cz',
       accountManagerPhone: '+420 605 789 012',
     },
+    seats: { skyboxes: [], clubSections: ['209'] },
     allocationKinds: ['TYPE2', 'TYPE3'],
     type1Allocation: null,
     benefitBudgetCZK: 150000,
@@ -196,6 +225,26 @@ export const USERS = {
     active: true,
   },
 }
+
+// ─── ADMIN USERS (arena employees) ────────────────────────────────────────────
+export const ADMIN_USERS = [
+  {
+    id: 'admin-petra',
+    name: 'Petra Novotná',
+    email: 'petra.novotna@arena.cz',
+    password: 'admin123',
+    initials: 'PN',
+    role: 'arena_admin',
+  },
+  {
+    id: 'admin-tomas',
+    name: 'Tomáš Říha',
+    email: 'tomas.riha@arena.cz',
+    password: 'admin123',
+    initials: 'TR',
+    role: 'arena_admin',
+  },
+]
 
 // Extra users per partner (for Users tab)
 export const PARTNER_USERS = {
@@ -756,30 +805,57 @@ export function getCurrentPartner() {
   return PARTNERS[user.partnerId]
 }
 
+// ─── ADMIN SESSION ─────────────────────────────────────────────────────────────
+let _adminUserId = null
+
+export function setAdminSession(userId) {
+  _adminUserId = userId
+  localStorage.setItem('admin_session', userId)
+}
+
+export function getAdminSession() {
+  if (_adminUserId) return ADMIN_USERS.find(u => u.id === _adminUserId) || null
+  const stored = localStorage.getItem('admin_session')
+  if (stored) {
+    const user = ADMIN_USERS.find(u => u.id === stored)
+    if (user) { _adminUserId = stored; return user }
+  }
+  return null
+}
+
+export function clearAdminSession() {
+  _adminUserId = null
+  localStorage.removeItem('admin_session')
+  localStorage.removeItem('admin_brand')
+}
+
 // ─── REPOSITORY FUNCTIONS ─────────────────────────────────────────────────────
 const delay = (ms = 200) => new Promise(r => setTimeout(r, ms))
 
-export async function getEventsForPartner(partnerId) {
+export async function getEventsForPartner(partnerId, brandKey) {
   await delay()
   const partner = PARTNERS[partnerId]
   if (!partner) return []
 
+  const brandEvents = getPublishedEvents(brandKey || 'o2arena')
+
   // Collect all event IDs this partner has allocations for
   const eventIds = new Set()
   Object.keys(EVENT_ALLOCATIONS).forEach(key => {
-    const [pid] = key.split(':')
-    if (pid === partnerId) {
-      const [, eid] = key.split(':')
-      eventIds.add(eid)
-    }
+    const [pid, eid] = key.split(':')
+    if (pid === partnerId) eventIds.add(eid)
   })
 
-  return EVENTS
-    .filter(e => eventIds.has(e.id))
+  return brandEvents
     .map(event => {
       const allocKey = `${partnerId}:${event.id}`
       const allocations = EVENT_ALLOCATIONS[allocKey] || []
-      // Determine overall status for display
+
+      // Events with no allocations still appear — shown as informational
+      if (allocations.length === 0) {
+        return { ...event, allocations: [], displayStatus: 'INFO', soonestDeadline: null }
+      }
+
       const hasAuto = allocations.some(a => a.kind === 'TYPE3' && a.status === 'AUTO_CONFIRMED')
       const hasPending = allocations.some(a => a.status === 'OPTION_PENDING')
       const hasConfirmed = allocations.some(a => a.status === 'CONFIRMED')
@@ -791,7 +867,6 @@ export async function getEventsForPartner(partnerId) {
       else if (hasAuto && !hasPending) displayStatus = 'AUTO_CONFIRMED'
       else if (hasPending) displayStatus = 'OPTION_PENDING'
 
-      // Earliest deadline among pending
       const deadlines = allocations
         .filter(a => a.optionDeadline && a.status === 'OPTION_PENDING')
         .map(a => new Date(a.optionDeadline))
@@ -806,7 +881,7 @@ export async function getEventsForPartner(partnerId) {
 
 export async function getEventDetail(eventId) {
   await delay()
-  return EVENTS.find(e => e.id === eventId) || null
+  return storeGetEvent(eventId) || null
 }
 
 export async function getEventAllocations(partnerId, eventId) {
