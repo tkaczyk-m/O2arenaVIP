@@ -1,11 +1,143 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Check, CheckCircle2, Loader2, Minus, Plus } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, CheckCircle2, Loader2, Minus, Plus, Wallet, ShoppingCart, MapPin } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
-import { getEventDetail, getEventAllocations, createOrder, CATERING_ADDONS, SKYBOXES } from '@/lib/mockData'
+import { getEventDetail, getEventAllocations, getPartner, createOrder, CATERING_ADDONS, SKYBOXES } from '@/lib/mockData'
 import ArenaMap from '@/components/arena/ArenaMap'
 import SeatPicker from '@/components/arena/SeatPicker'
 import clsx from 'clsx'
+
+// ─── Flow selector (pre-wizard) ────────────────────────────────────────────────
+function FlowSelector({ onSelect }) {
+  return (
+    <div className="py-8 max-w-xl mx-auto">
+      <h2 className="text-lg font-bold mb-2 text-center" style={{ color: 'var(--color-text)' }}>
+        Jak chcete postupovat?
+      </h2>
+      <p className="text-sm text-center mb-8" style={{ color: 'var(--color-text-muted)' }}>
+        Zvolte způsob rezervace vstupenek pro tuto akci.
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <button
+          onClick={() => onSelect('benefit')}
+          className="card rounded-2xl p-5 text-left hover:shadow-md transition-shadow group"
+          style={{ border: '2px solid transparent' }}
+          onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--color-primary)'}
+          onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}
+        >
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
+            style={{ backgroundColor: 'var(--color-primary)' + '18' }}
+          >
+            <Wallet size={20} style={{ color: 'var(--color-primary)' }} />
+          </div>
+          <h3 className="font-semibold text-sm mb-1" style={{ color: 'var(--color-text)' }}>
+            Čerpat benefitní místa
+          </h3>
+          <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+            Využiji benefit kredit z partnerské smlouvy. Vstupenky zdarma, hodnota se odečte z ročního budgetu.
+          </p>
+        </button>
+        <button
+          onClick={() => onSelect('cash')}
+          className="card rounded-2xl p-5 text-left hover:shadow-md transition-shadow"
+          style={{ border: '2px solid transparent' }}
+          onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--color-primary)'}
+          onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}
+        >
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
+            style={{ backgroundColor: '#2563eb18' }}
+          >
+            <ShoppingCart size={20} style={{ color: '#2563eb' }} />
+          </div>
+          <h3 className="font-semibold text-sm mb-1" style={{ color: 'var(--color-text)' }}>
+            Dokoupit volná místa
+          </h3>
+          <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+            Zakoupím další vstupenky z volné nabídky arény za standardní cenu.
+          </p>
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Cash seat list (Step 1, cash flow) ────────────────────────────────────────
+function CashSeatList({ event, selectedCashSeats, setSelectedCashSeats }) {
+  const seats = event?.availableCashSeats || []
+
+  function toggle(seatId) {
+    setSelectedCashSeats(prev =>
+      prev.includes(seatId) ? prev.filter(id => id !== seatId) : [...prev, seatId]
+    )
+  }
+
+  if (seats.length === 0) {
+    return (
+      <div className="card rounded-xl p-8 text-center">
+        <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Žádná volná místa nejsou k dispozici.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <h2 className="font-semibold text-base mb-4" style={{ color: 'var(--color-text)' }}>
+        Dostupná volná místa
+      </h2>
+      <div className="space-y-2">
+        {seats.map(seat => {
+          const isSelected = selectedCashSeats.includes(seat.id)
+          return (
+            <button
+              key={seat.id}
+              onClick={() => toggle(seat.id)}
+              className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-left transition-all"
+              style={{
+                border: `2px solid ${isSelected ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                backgroundColor: isSelected ? 'var(--color-primary)' + '0a' : 'var(--color-surface)',
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all"
+                  style={{
+                    borderColor: isSelected ? 'var(--color-primary)' : 'var(--color-border)',
+                    backgroundColor: isSelected ? 'var(--color-primary)' : 'transparent',
+                  }}
+                >
+                  {isSelected && <Check size={11} style={{ color: 'var(--color-primary-fg)' }} />}
+                </div>
+                <div>
+                  <div className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>
+                    {seat.label}
+                  </div>
+                </div>
+              </div>
+              <div className="text-sm font-semibold shrink-0" style={{ color: 'var(--color-text)' }}>
+                {seat.price.toLocaleString('cs-CZ')} Kč
+              </div>
+            </button>
+          )
+        })}
+      </div>
+      {selectedCashSeats.length > 0 && (
+        <div
+          className="mt-3 px-4 py-2.5 rounded-lg text-sm flex items-center justify-between"
+          style={{ backgroundColor: 'var(--color-primary)' + '12' }}
+        >
+          <span style={{ color: 'var(--color-primary)' }}>
+            Vybráno {selectedCashSeats.length} {selectedCashSeats.length === 1 ? 'místo' : selectedCashSeats.length < 5 ? 'místa' : 'míst'}
+          </span>
+          <span className="font-semibold" style={{ color: 'var(--color-primary)' }}>
+            {seats.filter(s => selectedCashSeats.includes(s.id)).reduce((sum, s) => sum + s.price, 0).toLocaleString('cs-CZ')} Kč
+          </span>
+        </div>
+      )}
+    </div>
+  )
+}
 
 // ─── Step indicator ────────────────────────────────────────────────────────────
 function StepIndicator({ currentStep, steps }) {
@@ -166,8 +298,12 @@ function PriceSummary({ allocation, selectedSkyboxes, selectedSeatsBySection, se
 }
 
 // ─── Step 1: Seat selection ────────────────────────────────────────────────────
-function Step1({ allocations, selectedSkyboxes, setSelectedSkyboxes, selectedSeatsBySection, setSelectedSeatsBySection, t }) {
+function Step1({ allocations, flow, event, selectedCashSeats, setSelectedCashSeats, selectedSkyboxes, setSelectedSkyboxes, selectedSeatsBySection, setSelectedSeatsBySection, t }) {
   const [activeSeatPickerSection, setActiveSeatPickerSection] = useState(null)
+
+  if (flow === 'cash') {
+    return <CashSeatList event={event} selectedCashSeats={selectedCashSeats} setSelectedCashSeats={setSelectedCashSeats} />
+  }
 
   const type1Allocs = allocations.filter(a => a.kind === 'TYPE1')
   const allSkyboxes = type1Allocs.flatMap(a => a.skyboxes || [])
@@ -471,7 +607,7 @@ function Step2({ allocations, selectedAddons, setSelectedAddons, locale, t }) {
 }
 
 // ─── Step 3: Summary ───────────────────────────────────────────────────────────
-function Step3({ event, allocations, selectedSkyboxes, selectedSeatsBySection, selectedAddons, paymentMethod, setPaymentMethod, t }) {
+function Step3({ event, allocations, selectedSkyboxes, selectedSeatsBySection, selectedAddons, paymentMethod, setPaymentMethod, partnerData, agreedToTerms, setAgreedToTerms, t }) {
   const type1Allocs = allocations.filter(a => a.kind === 'TYPE1')
   const firstAlloc = type1Allocs[0]
 
@@ -520,6 +656,11 @@ function Step3({ event, allocations, selectedSkyboxes, selectedSeatsBySection, s
   const total = subtotal + addonTotal
 
   const hasBenefit = allocations.some(a => a.kind === 'TYPE2' || a.kind === 'TYPE3')
+  const benefitAllocs = allocations.filter(a => a.kind === 'TYPE2' || a.kind === 'TYPE3')
+  const benefitUsed = benefitAllocs.reduce((s, a) => s + (a.benefitValueCZK || 0) * (a.availableCount || 0), 0)
+  const budgetRemaining = partnerData
+    ? partnerData.benefitBudgetCZK - partnerData.spentBenefitCZK - benefitUsed
+    : null
 
   return (
     <div className="space-y-5">
@@ -569,14 +710,18 @@ function Step3({ event, allocations, selectedSkyboxes, selectedSeatsBySection, s
                 <span style={{ color: 'var(--color-text)' }}>{line.amount.toLocaleString('cs-CZ')} Kč</span>
               </div>
             ))}
-            {hasBenefit && allocations.filter(a => a.kind !== 'TYPE1').map(a => (
-              <div key={a.id} className="flex justify-between text-sm">
-                <span style={{ color: 'var(--color-text-muted)' }}>
-                  {a.kind === 'TYPE3' ? 'Auto-přiřazené benefit vstupenky' : 'Benefit vstupenky'}
-                </span>
-                <span style={{ color: '#059669' }}>z kreditu</span>
+            {hasBenefit && benefitUsed > 0 && (
+              <div className="flex justify-between text-sm">
+                <span style={{ color: 'var(--color-text-muted)' }}>Benefit kredit</span>
+                <span style={{ color: '#7c3aed', fontWeight: 600 }}>−{benefitUsed.toLocaleString('cs-CZ')} Kč</span>
               </div>
-            ))}
+            )}
+            {hasBenefit && budgetRemaining !== null && (
+              <div className="flex justify-between text-sm">
+                <span style={{ color: 'var(--color-text-muted)' }}>Zbývá po nákupu</span>
+                <span style={{ color: 'var(--color-text)' }}>{budgetRemaining.toLocaleString('cs-CZ')} Kč</span>
+              </div>
+            )}
           </div>
           {total > 0 && (
             <div className="border-t mt-3 pt-3 flex justify-between items-center" style={{ borderColor: 'var(--color-border)' }}>
@@ -592,6 +737,17 @@ function Step3({ event, allocations, selectedSkyboxes, selectedSeatsBySection, s
               <span className="font-bold text-base text-emerald-600">0 Kč (z kreditu)</span>
             </div>
           )}
+        </div>
+      )}
+
+      {/* No cash note for benefit-only orders */}
+      {hasBenefit && total === 0 && (
+        <div
+          className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm"
+          style={{ backgroundColor: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}
+        >
+          <Check size={15} className="text-emerald-600 shrink-0" />
+          <span style={{ color: '#059669' }}>Za tuto objednávku neplatíte žádnou hotovost</span>
         </div>
       )}
 
@@ -632,6 +788,29 @@ function Step3({ event, allocations, selectedSkyboxes, selectedSeatsBySection, s
           </div>
         </div>
       )}
+
+      {/* VOP consent */}
+      <div className="card rounded-xl p-4">
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={agreedToTerms}
+            onChange={e => setAgreedToTerms(e.target.checked)}
+            className="mt-0.5 shrink-0 w-4 h-4"
+            style={{ accentColor: 'var(--color-primary)' }}
+          />
+          <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+            Souhlasím s{' '}
+            <a href="#" className="underline" style={{ color: 'var(--color-primary)' }}>
+              Všeobecnými obchodními podmínkami
+            </a>
+            {' '}a{' '}
+            <a href="#" className="underline" style={{ color: 'var(--color-primary)' }}>
+              zpracováním osobních údajů
+            </a>
+          </span>
+        </label>
+      </div>
     </div>
   )
 }
@@ -715,6 +894,12 @@ export default function ClaimWizardPage() {
   const [selectedAddons, setSelectedAddons] = useState([])
   const [paymentMethod, setPaymentMethod] = useState('INVOICE')
 
+  // Flow + extended state
+  const [flow, setFlow] = useState(null)
+  const [partnerData, setPartnerData] = useState(null)
+  const [selectedCashSeats, setSelectedCashSeats] = useState([])
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
+
   const steps = [t('claim.step1'), t('claim.step2'), t('claim.step3'), t('claim.step4')]
 
   useEffect(() => {
@@ -722,19 +907,24 @@ export default function ClaimWizardPage() {
     Promise.all([
       getEventDetail(eventId),
       getEventAllocations(currentPartner.id, eventId),
-    ]).then(([ev, allocs]) => {
+      getPartner(currentPartner.id),
+    ]).then(([ev, allocs, partner]) => {
       setEvent(ev)
       setAllocations(allocs)
+      setPartnerData(partner)
       setLoading(false)
     })
   }, [eventId, currentPartner])
 
+  const hasType2or3 = useMemo(() => allocations.some(a => a.kind === 'TYPE2' || a.kind === 'TYPE3'), [allocations])
+
   const canProceedStep1 = useMemo(() => {
+    if (flow === 'cash') return selectedCashSeats.length > 0
     const type1 = allocations.filter(a => a.kind === 'TYPE1')
     if (type1.length === 0) return true // benefit only, no selection needed
     const totalSeats = Object.values(selectedSeatsBySection).reduce((s, v) => s + v.length, 0)
     return selectedSkyboxes.length > 0 || totalSeats > 0
-  }, [allocations, selectedSkyboxes, selectedSeatsBySection])
+  }, [allocations, flow, selectedCashSeats, selectedSkyboxes, selectedSeatsBySection])
 
   const handleNext = async () => {
     if (step < 3) { setStep(s => s + 1); return }
@@ -759,6 +949,29 @@ export default function ClaimWizardPage() {
       <div className="animate-pulse space-y-4 max-w-2xl">
         <div className="h-8 rounded-lg w-64" style={{ backgroundColor: 'var(--color-surface-2)' }} />
         <div className="h-64 rounded-xl" style={{ backgroundColor: 'var(--color-surface-2)' }} />
+      </div>
+    )
+  }
+
+  // Pre-wizard flow selector for TYPE2/TYPE3 personas
+  if (flow === null && hasType2or3) {
+    return (
+      <div className="animate-fade-in max-w-4xl">
+        <Link to={`/events/${eventId}`} className="btn-ghost mb-4 inline-flex">
+          <ArrowLeft size={15} />
+          {t('common.back')}
+        </Link>
+        {event && (
+          <div className="mb-6">
+            <h1 className="text-xl font-bold" style={{ color: 'var(--color-text)' }}>
+              {event.name}
+            </h1>
+            <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+              {new Date(event.date).toLocaleDateString('cs-CZ', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </p>
+          </div>
+        )}
+        <FlowSelector onSelect={setFlow} />
       </div>
     )
   }
@@ -795,6 +1008,10 @@ export default function ClaimWizardPage() {
           {step === 1 && (
             <Step1
               allocations={allocations}
+              flow={flow}
+              event={event}
+              selectedCashSeats={selectedCashSeats}
+              setSelectedCashSeats={setSelectedCashSeats}
               selectedSkyboxes={selectedSkyboxes}
               setSelectedSkyboxes={setSelectedSkyboxes}
               selectedSeatsBySection={selectedSeatsBySection}
@@ -820,6 +1037,9 @@ export default function ClaimWizardPage() {
               selectedAddons={selectedAddons}
               paymentMethod={paymentMethod}
               setPaymentMethod={setPaymentMethod}
+              partnerData={partnerData}
+              agreedToTerms={agreedToTerms}
+              setAgreedToTerms={setAgreedToTerms}
               t={t}
             />
           )}
@@ -853,7 +1073,7 @@ export default function ClaimWizardPage() {
           </button>
           <button
             onClick={handleNext}
-            disabled={(step === 1 && !canProceedStep1) || submitting}
+            disabled={(step === 1 && !canProceedStep1) || (step === 3 && !agreedToTerms) || submitting}
             className="btn-primary"
           >
             {submitting ? (

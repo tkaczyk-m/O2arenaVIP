@@ -231,6 +231,17 @@ export const EVENTS = [
     date: daysFromNow(18),
     doorsOpen: daysFromNow(18),
     imageColor: '#0f4c8c',
+    imageUrl: 'https://images.unsplash.com/photo-1515703407324-5f753afd8be8?w=1200&auto=format&fit=crop',
+    genre: 'Lední hokej',
+    venue: { name: 'O2 arena', city: 'Praha', address: 'Českomoravská 2345/17, Praha 9' },
+    description: 'Největší hokejová událost roku přichází do Prahy. Národní tým Česka se střetne s favorizovanou Kanadou v klíčovém zápase skupinové fáze Mistrovství světa IIHF 2026. Atmosféra v O2 areně bude naprosto jedinečná — připravte se na dvě hodiny čistého hokejového adrenalinu.',
+    availableCashSeats: [
+      { id: 'cs-001', label: 'Tribuna A — Řada 5, Sedadlo 12', price: 1800 },
+      { id: 'cs-002', label: 'Tribuna A — Řada 5, Sedadlo 13', price: 1800 },
+      { id: 'cs-003', label: 'Tribuna B — Řada 3, Sedadlo 7', price: 2200 },
+      { id: 'cs-004', label: 'Tribuna B — Řada 3, Sedadlo 8', price: 2200 },
+      { id: 'cs-005', label: 'Tribuna C — Řada 1, Sedadlo 22', price: 2800 },
+    ],
   },
   {
     id: 'ev-002',
@@ -240,6 +251,17 @@ export const EVENTS = [
     date: daysFromNow(31),
     doorsOpen: daysFromNow(31),
     imageColor: '#7c3aed',
+    imageUrl: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=1200&auto=format&fit=crop',
+    genre: 'Pop / Rock',
+    venue: { name: 'O2 arena', city: 'Praha', address: 'Českomoravská 2345/17, Praha 9' },
+    description: 'Světoznámá britská kapela Coldplay přináší do Prahy svou spektakulární show Music of the Spheres. Toto turné je považováno za jedno z nejúchvatnějších v historii moderní hudby — laser show, pyrotechnika a nezapomenutelné hity jako Yellow, The Scientist nebo A Sky Full of Stars.',
+    availableCashSeats: [
+      { id: 'cs-006', label: 'Parketa — Zóna 1, Místo 45', price: 3500 },
+      { id: 'cs-007', label: 'Parketa — Zóna 1, Místo 46', price: 3500 },
+      { id: 'cs-008', label: 'Tribuna A — Řada 8, Sedadlo 3', price: 2400 },
+      { id: 'cs-009', label: 'Tribuna A — Řada 8, Sedadlo 4', price: 2400 },
+      { id: 'cs-010', label: 'Tribuna D — Řada 2, Sedadlo 17', price: 1900 },
+    ],
   },
   {
     id: 'ev-003',
@@ -249,6 +271,16 @@ export const EVENTS = [
     date: daysFromNow(45),
     doorsOpen: daysFromNow(45),
     imageColor: '#b91c1c',
+    imageUrl: 'https://images.unsplash.com/photo-1546519638405-a9d1b9a2e48e?w=1200&auto=format&fit=crop',
+    genre: 'Basketball / NBA',
+    venue: { name: 'O2 arena', city: 'Praha', address: 'Českomoravská 2345/17, Praha 9' },
+    description: 'NBA přijíždí do Prahy! Chicago Bulls a Milwaukee Bucks se střetnou v exkluzivním předzápasovém utkání NBA Global Games. Zažijte atmosféru nejlepší basketbalové ligy světa přímo v O2 areně — NBA All-Star výkon zaručen.',
+    availableCashSeats: [
+      { id: 'cs-011', label: 'Courtside — Sek. 101, Sedadlo 8', price: 8900 },
+      { id: 'cs-012', label: 'Tribuna B — Řada 4, Sedadlo 11', price: 2600 },
+      { id: 'cs-013', label: 'Tribuna B — Řada 4, Sedadlo 12', price: 2600 },
+      { id: 'cs-014', label: 'Tribuna C — Řada 6, Sedadlo 9', price: 1800 },
+    ],
   },
   {
     id: 'ev-004',
@@ -258,6 +290,15 @@ export const EVENTS = [
     date: daysFromNow(62),
     doorsOpen: daysFromNow(62),
     imageColor: '#1c1c1c',
+    imageUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1200&auto=format&fit=crop',
+    genre: 'Heavy Metal / Rock',
+    venue: { name: 'O2 arena', city: 'Praha', address: 'Českomoravská 2345/17, Praha 9' },
+    description: 'Legendární Metallica se vrací do Prahy s turné M72, které kritici označují za nejlepší show v historii kapely. Dvoufázové pódio No Repeat Weekend zaručuje unikátní setlist na každém z vystoupení. Special guests Pantera slibují nezapomenutelný předpředstavení.',
+    availableCashSeats: [
+      { id: 'cs-015', label: 'Parketa — Pit Zone, Místo 88', price: 4200 },
+      { id: 'cs-016', label: 'Parketa — Pit Zone, Místo 89', price: 4200 },
+      { id: 'cs-017', label: 'Tribuna A — Řada 2, Sedadlo 15', price: 2900 },
+    ],
   },
   {
     id: 'ev-005',
@@ -267,6 +308,16 @@ export const EVENTS = [
     date: daysFromNow(9),
     doorsOpen: daysFromNow(9),
     imageColor: '#c2410c',
+    imageUrl: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1200&auto=format&fit=crop',
+    genre: 'Lední hokej / Extraliga',
+    venue: { name: 'O2 arena', city: 'Praha', address: 'Českomoravská 2345/17, Praha 9' },
+    description: 'Extraligové derby mezi pražskou Spartou a Třineckými Ocelářemi — dvě nejúspěšnější kluby posledních sezón se střetnou ve vyprodané O2 areně. Utkání 34. kola rozhodne o pozici v tabulce před play-off.',
+    availableCashSeats: [
+      { id: 'cs-018', label: 'Tribuna A — Řada 7, Sedadlo 4', price: 1400 },
+      { id: 'cs-019', label: 'Tribuna A — Řada 7, Sedadlo 5', price: 1400 },
+      { id: 'cs-020', label: 'Tribuna B — Řada 2, Sedadlo 19', price: 1900 },
+      { id: 'cs-021', label: 'Tribuna B — Řada 2, Sedadlo 20', price: 1900 },
+    ],
   },
   {
     id: 'ev-006',
@@ -276,6 +327,15 @@ export const EVENTS = [
     date: daysFromNow(78),
     doorsOpen: daysFromNow(78),
     imageColor: '#064e3b',
+    imageUrl: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=1200&auto=format&fit=crop',
+    genre: 'Pop / Alt-Pop',
+    venue: { name: 'O2 arena', city: 'Praha', address: 'Českomoravská 2345/17, Praha 9' },
+    description: 'Billie Eilish přijíždí do Prahy s turné k albu Hit Me Hard and Soft — jedním z nejlépe hodnocených alb roku. Její show kombinuje minimalistickou estetiku s velkolepou vizuální produkcí a intimní atmosférou, která fanoušky uchvátí od první do poslední sekundy.',
+    availableCashSeats: [
+      { id: 'cs-022', label: 'Parketa — Zóna 2, Místo 12', price: 3200 },
+      { id: 'cs-023', label: 'Tribuna C — Řada 3, Sedadlo 6', price: 2100 },
+      { id: 'cs-024', label: 'Tribuna C — Řada 3, Sedadlo 7', price: 2100 },
+    ],
   },
   {
     id: 'ev-007',
@@ -285,6 +345,15 @@ export const EVENTS = [
     date: daysFromNow(5),
     doorsOpen: daysFromNow(5),
     imageColor: '#1d4ed8',
+    imageUrl: 'https://images.unsplash.com/photo-1515703407324-5f753afd8be8?w=1200&auto=format&fit=crop',
+    genre: 'Lední hokej / Extraliga Play-off',
+    venue: { name: 'O2 arena', city: 'Praha', address: 'Českomoravská 2345/17, Praha 9' },
+    description: '3. utkání finálové série Tipsport Extraligy 2026. Série je vyrovnaná — vše se rozhodne v nadcházejících zápasech. Atmosféra finálového hokeje v O2 areně je nezapomenutelným zážitkem pro každého příznivce tohoto sportu.',
+    availableCashSeats: [
+      { id: 'cs-025', label: 'Tribuna A — Řada 4, Sedadlo 8', price: 2200 },
+      { id: 'cs-026', label: 'Tribuna A — Řada 4, Sedadlo 9', price: 2200 },
+      { id: 'cs-027', label: 'Tribuna D — Řada 1, Sedadlo 3', price: 2800 },
+    ],
   },
 ]
 
@@ -546,6 +615,24 @@ export const EVENT_ALLOCATIONS = {
 // ─── ORDERS (historical) ───────────────────────────────────────────────────────
 export const ORDERS = {
   barbora: [
+    {
+      id: 'ORD-2026-1301',
+      partnerId: 'barbora',
+      eventId: 'ev-001',
+      eventName: 'Hokejové MS 2026 — Česko vs. Kanada',
+      eventDate: daysFromNow(18),
+      kind: 'TYPE1',
+      items: [{ type: 'SKYBOX', label: 'Skybox SB-05', count: 1 }],
+      venueFee: 28000,
+      cateringFee: 12000,
+      transactionFee: 2000,
+      addonsFee: 0,
+      totalCZK: 42000,
+      status: 'RESERVED',
+      paymentMethod: 'INVOICE',
+      paymentDueDate: daysFromNow(7),
+      createdAt: daysFromNow(-2),
+    },
     {
       id: 'ORD-2025-1142',
       partnerId: 'barbora',

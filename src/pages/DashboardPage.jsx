@@ -53,55 +53,49 @@ function EventCard({ event, t, locale }) {
   const isLapsed = event.displayStatus === 'LAPSED'
 
   const statusLabel = t(`event.status.${event.displayStatus}`)
+  const statusColor = isPending ? 'amber' : isAuto ? 'blue' : isConfirmed ? 'green' : 'gray'
 
-  const statusColor = isPending ? 'amber'
-    : isAuto ? 'blue'
-    : isConfirmed ? 'green'
-    : isLapsed ? 'gray'
-    : 'gray'
-
-  // Collect unique kinds across allocations
   const kinds = [...new Set(event.allocations.map(a => a.kind))]
 
   return (
-    <div
-      className="card rounded-xl overflow-hidden hover:shadow-md transition-shadow duration-200 flex flex-col"
-    >
-      {/* Color bar top */}
-      <div
-        className="h-1 w-full"
-        style={{ backgroundColor: catConfig.color }}
-      />
+    <div className="card rounded-xl overflow-hidden hover:shadow-md transition-shadow duration-200 flex flex-col">
+      {/* Event photo */}
+      <div className="relative h-36 overflow-hidden bg-gray-200" style={{ backgroundColor: event.imageColor }}>
+        {event.imageUrl && (
+          <img
+            src={event.imageUrl}
+            alt={event.name}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        )}
+        {/* Category badge overlay */}
+        <div className="absolute top-2 left-2">
+          <span
+            className="badge text-xs backdrop-blur-sm"
+            style={{ color: catConfig.color, backgroundColor: `rgba(255,255,255,0.88)` }}
+          >
+            {catLabel}
+          </span>
+        </div>
+        <div className="absolute top-2 right-2">
+          <StatusBadge status={event.displayStatus} label={statusLabel} color={statusColor} />
+        </div>
+      </div>
 
       <div className="p-4 flex flex-col flex-1">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-2 mb-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <span
-                className="badge text-xs"
-                style={{ color: catConfig.color, backgroundColor: catConfig.bg }}
-              >
-                {catLabel}
-              </span>
-              <StatusBadge status={event.displayStatus} label={statusLabel} color={statusColor} />
-            </div>
-            <h3 className="font-semibold text-sm leading-snug" style={{ color: 'var(--color-text)' }}>
-              {event.name}
-            </h3>
-            {event.subtitle && (
-              <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-                {event.subtitle}
-              </p>
-            )}
-          </div>
-        </div>
+        <h3 className="font-semibold text-sm leading-snug mb-0.5" style={{ color: 'var(--color-text)' }}>
+          {event.name}
+        </h3>
+        {event.subtitle && (
+          <p className="text-xs mb-2" style={{ color: 'var(--color-text-muted)' }}>{event.subtitle}</p>
+        )}
 
         {/* Date & time */}
-        <div className="flex items-center gap-1.5 text-xs mb-3" style={{ color: 'var(--color-text-muted)' }}>
-          <Calendar size={13} className="shrink-0" />
+        <div className="flex items-center gap-1.5 text-xs mb-2" style={{ color: 'var(--color-text-muted)' }}>
+          <Calendar size={12} className="shrink-0" />
           <span>{formatDate(event.date, locale)}</span>
-          <span className="opacity-50">·</span>
+          <span className="opacity-40">·</span>
           <span>{formatTime(event.date)}</span>
         </div>
 
@@ -130,27 +124,43 @@ function EventCard({ event, t, locale }) {
             </div>
           )}
 
-          {/* CTA */}
-          <Link
-            to={`/events/${event.id}`}
-            className={clsx(
-              'flex items-center justify-center gap-1.5 w-full py-2 rounded-lg text-sm font-medium transition-all duration-150',
-              isLapsed ? 'opacity-50 pointer-events-none' : ''
+          {/* Dual action buttons */}
+          <div className="flex gap-2">
+            {!isLapsed && (
+              <Link
+                to={`/events/${event.id}/claim`}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-all duration-150"
+                style={{
+                  backgroundColor: isPending ? 'var(--color-primary)' : 'var(--color-surface-2)',
+                  color: isPending ? 'var(--color-primary-fg)' : 'var(--color-text)',
+                  border: isPending ? 'none' : '1px solid var(--color-border)',
+                }}
+              >
+                {isPending ? (
+                  <><Ticket size={13} />{t('event.claimSeats')}</>
+                ) : isAuto ? (
+                  <><Zap size={13} />{t('event.viewTickets')}</>
+                ) : (
+                  <><CheckCircle2 size={13} />Potvrzeno</>
+                )}
+              </Link>
             )}
-            style={{
-              backgroundColor: isPending ? 'var(--color-primary)' : 'var(--color-surface-2)',
-              color: isPending ? 'var(--color-primary-fg)' : 'var(--color-text)',
-              border: isPending ? 'none' : '1px solid var(--color-border)',
-            }}
-          >
-            {isPending ? (
-              <><Ticket size={14} />{t('event.claimSeats')}</>
-            ) : isAuto ? (
-              <><Zap size={14} />{t('event.viewTickets')}</>
-            ) : (
-              <><ChevronRight size={14} />Zobrazit detail</>
-            )}
-          </Link>
+            <Link
+              to={`/events/${event.id}`}
+              className={clsx(
+                'flex items-center justify-center gap-1 py-2 px-3 rounded-lg text-xs font-medium transition-all duration-150',
+                isLapsed ? 'flex-1' : ''
+              )}
+              style={{
+                color: 'var(--color-text-muted)',
+                backgroundColor: 'var(--color-surface-2)',
+                border: '1px solid var(--color-border)',
+              }}
+            >
+              <ChevronRight size={13} />
+              Detail
+            </Link>
+          </div>
         </div>
       </div>
     </div>

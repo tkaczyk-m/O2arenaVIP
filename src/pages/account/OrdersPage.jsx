@@ -145,6 +145,31 @@ function OrderRow({ order, remainingBudget }) {
         </div>
       )}
 
+      {/* RESERVED — payment due */}
+      {order.status === 'RESERVED' && (
+        <div className="space-y-2">
+          <div
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs"
+            style={{ backgroundColor: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.25)' }}
+          >
+            <span style={{ color: '#dc2626', fontWeight: 600 }}>Nezaplaceno</span>
+            {order.paymentDueDate && (
+              <span style={{ color: '#dc2626' }}>
+                — uhradit do {formatDate(order.paymentDueDate)}
+              </span>
+            )}
+          </div>
+          <button
+            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+            style={{ color: '#fff', backgroundColor: '#dc2626' }}
+            onClick={() => alert('Platební brána (demo)')}
+          >
+            <CreditCard size={13} />
+            Zaplatit nyní
+          </button>
+        </div>
+      )}
+
       {/* Actions */}
       {order.status === 'PAID' && (
         <button

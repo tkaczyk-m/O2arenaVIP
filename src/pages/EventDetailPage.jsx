@@ -138,6 +138,9 @@ export default function EventDetailPage() {
     .map(a => new Date(a.optionDeadline))
     .sort((a, b) => a - b)[0]
 
+  const venueName = event.venue?.name || 'O2 Arena Praha'
+  const venueCity = event.venue?.city || 'Praha'
+
   return (
     <div className="animate-fade-in max-w-3xl">
       {/* Back */}
@@ -146,76 +149,100 @@ export default function EventDetailPage() {
         {t('common.back')}
       </Link>
 
-      {/* Event hero */}
-      <div
-        className="card rounded-2xl overflow-hidden mb-6"
-      >
-        {/* Color band */}
+      {/* Hero photo */}
+      <div className="card rounded-2xl overflow-hidden mb-6">
         <div
-          className="h-2"
-          style={{ backgroundColor: event.imageColor || 'var(--color-primary)' }}
-        />
-
-        <div className="p-5 sm:p-6">
-          <div className="flex flex-wrap gap-2 mb-3">
+          className="relative h-52 sm:h-72 overflow-hidden"
+          style={{ backgroundColor: event.imageColor || '#1a1a2e' }}
+        >
+          {event.imageUrl && (
+            <img
+              src={event.imageUrl}
+              alt={event.name}
+              className="w-full h-full object-cover"
+            />
+          )}
+          {/* Gradient overlay */}
+          <div
+            className="absolute inset-0"
+            style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)' }}
+          />
+          {/* Category + genre badge */}
+          <div className="absolute top-3 left-3 flex gap-2">
             <span
-              className="badge text-xs px-2 py-0.5"
-              style={{
-                backgroundColor: `${event.imageColor}20` || 'var(--color-surface-2)',
-                color: event.imageColor || 'var(--color-text-muted)',
-              }}
+              className="text-xs font-medium px-2.5 py-1 rounded-full backdrop-blur-sm"
+              style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.25)' }}
             >
               {catLabel}
             </span>
-          </div>
-
-          <h1 className="text-xl sm:text-2xl font-bold mb-1" style={{ color: 'var(--color-text)' }}>
-            {event.name}
-          </h1>
-          {event.subtitle && (
-            <p className="text-base mb-4" style={{ color: 'var(--color-text-muted)' }}>
-              {event.subtitle}
-            </p>
-          )}
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-            <div className="flex items-center gap-2" style={{ color: 'var(--color-text-muted)' }}>
-              <Calendar size={15} className="shrink-0" style={{ color: 'var(--color-primary)' }} />
-              <span>{date}</span>
-            </div>
-            <div className="flex items-center gap-2" style={{ color: 'var(--color-text-muted)' }}>
-              <Clock size={15} className="shrink-0" style={{ color: 'var(--color-primary)' }} />
-              <span>{time}</span>
-            </div>
-            <div className="flex items-center gap-2" style={{ color: 'var(--color-text-muted)' }}>
-              <MapPin size={15} className="shrink-0" style={{ color: 'var(--color-primary)' }} />
-              <span>{currentPartner ? 'O2 Arena Praha' : '—'}</span>
-            </div>
-          </div>
-
-          {/* Option deadline banner */}
-          {hasPending && soonestDeadline && (
-            <div
-              className="mt-4 flex items-center gap-2 px-3 py-2 rounded-lg text-sm"
-              style={{ backgroundColor: 'rgba(217, 119, 6, 0.1)', border: '1px solid rgba(217, 119, 6, 0.3)' }}
-            >
-              <AlertCircle size={15} className="text-amber-600 shrink-0" />
-              <span className="text-amber-700 dark:text-amber-400">
-                {t('event.optionExpires')}:&nbsp;<CountdownTimer deadline={soonestDeadline} />
+            {event.genre && (
+              <span
+                className="text-xs font-medium px-2.5 py-1 rounded-full backdrop-blur-sm"
+                style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.25)' }}
+              >
+                {event.genre}
               </span>
-            </div>
-          )}
-
-          {hasAuto && !hasPending && (
-            <div
-              className="mt-4 flex items-center gap-2 px-3 py-2 rounded-lg text-sm"
-              style={{ backgroundColor: 'rgba(37, 99, 235, 0.08)', border: '1px solid rgba(37, 99, 235, 0.2)' }}
-            >
-              <Zap size={15} className="text-blue-600 shrink-0" />
-              <span style={{ color: '#2563eb' }}>{t('event.autoAssigned')}</span>
-            </div>
-          )}
+            )}
+          </div>
+          {/* Title overlay */}
+          <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5">
+            <h1 className="text-xl sm:text-2xl font-bold text-white leading-snug mb-0.5">
+              {event.name}
+            </h1>
+            {event.subtitle && (
+              <p className="text-sm text-white/75">{event.subtitle}</p>
+            )}
+          </div>
         </div>
+
+        {/* Info row */}
+        <div className="px-5 py-4 flex flex-wrap gap-4 text-sm border-b" style={{ borderColor: 'var(--color-border)' }}>
+          <div className="flex items-center gap-2" style={{ color: 'var(--color-text-muted)' }}>
+            <Calendar size={14} className="shrink-0" style={{ color: 'var(--color-primary)' }} />
+            <span>{date}</span>
+          </div>
+          <div className="flex items-center gap-2" style={{ color: 'var(--color-text-muted)' }}>
+            <Clock size={14} className="shrink-0" style={{ color: 'var(--color-primary)' }} />
+            <span>{time}</span>
+          </div>
+          <div className="flex items-center gap-2" style={{ color: 'var(--color-text-muted)' }}>
+            <MapPin size={14} className="shrink-0" style={{ color: 'var(--color-primary)' }} />
+            <span>{venueName}, {venueCity}</span>
+          </div>
+        </div>
+
+        {/* Description */}
+        {event.description && (
+          <div className="px-5 py-4 text-sm leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+            {event.description}
+          </div>
+        )}
+
+        {/* Alerts */}
+        {(hasPending || hasAuto) && (
+          <div className="px-5 pb-4 space-y-2">
+            {hasPending && soonestDeadline && (
+              <div
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm"
+                style={{ backgroundColor: 'rgba(217, 119, 6, 0.1)', border: '1px solid rgba(217, 119, 6, 0.3)' }}
+              >
+                <AlertCircle size={14} className="text-amber-600 shrink-0" />
+                <span className="text-amber-700 dark:text-amber-400">
+                  {t('event.optionExpires')}:&nbsp;<CountdownTimer deadline={soonestDeadline} />
+                </span>
+              </div>
+            )}
+            {hasAuto && !hasPending && (
+              <div
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm"
+                style={{ backgroundColor: 'rgba(37, 99, 235, 0.08)', border: '1px solid rgba(37, 99, 235, 0.2)' }}
+              >
+                <Zap size={14} className="text-blue-600 shrink-0" />
+                <span style={{ color: '#2563eb' }}>{t('event.autoAssigned')}</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Allocations */}
@@ -245,9 +272,7 @@ export default function EventDetailPage() {
       )}
 
       {hasConfirmed && !hasPending && !hasAuto && (
-        <div
-          className="card rounded-xl p-4 flex items-center gap-3"
-        >
+        <div className="card rounded-xl p-4 flex items-center gap-3">
           <div
             className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
             style={{ backgroundColor: 'rgba(16, 185, 129, 0.12)' }}
