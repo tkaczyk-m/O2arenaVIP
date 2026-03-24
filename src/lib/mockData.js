@@ -678,23 +678,26 @@ export const ORDERS = {
 // ─── TICKETS ───────────────────────────────────────────────────────────────────
 export const TICKETS_DATA = {
   barbora: [
-    { id: 'T-001', orderId: 'ORD-2025-1142', eventName: 'Hokej — Sparta vs. Třinec', seatLabel: 'Skybox SB-05 — místo 1', guestName: 'Jan Novák', guestEmail: 'jan.novak@skoda.cz', status: 'ASSIGNED' },
-    { id: 'T-002', orderId: 'ORD-2025-1142', eventName: 'Hokej — Sparta vs. Třinec', seatLabel: 'Skybox SB-05 — místo 2', guestName: 'Marie Čermáková', guestEmail: 'marie.cermakova@skoda.cz', status: 'SENT' },
-    { id: 'T-003', orderId: 'ORD-2025-1142', eventName: 'Hokej — Sparta vs. Třinec', seatLabel: 'Skybox SB-05 — místo 3', guestName: null, guestEmail: null, status: 'UNASSIGNED' },
-    { id: 'T-004', orderId: 'ORD-2025-1142', eventName: 'Hokej — Sparta vs. Třinec', seatLabel: 'Skybox SB-05 — místo 4', guestName: null, guestEmail: null, status: 'UNASSIGNED' },
-    { id: 'T-005', orderId: 'ORD-2025-1142', eventName: 'Hokej — Sparta vs. Třinec', seatLabel: 'Skybox SB-05 — místo 5', guestName: 'Petr Kovář', guestEmail: 'petr.kovar@skoda.cz', status: 'ASSIGNED' },
+    { id: 'T-001', orderId: 'ORD-2025-1142', eventName: 'Hokej — Sparta vs. Třinec', seatLabel: 'Skybox SB-05 — místo 1', guestEmail: null, status: 'ASSIGNED' },
+    { id: 'T-002', orderId: 'ORD-2025-1142', eventName: 'Hokej — Sparta vs. Třinec', seatLabel: 'Skybox SB-05 — místo 2', guestEmail: 'marie.cermakova@skoda.cz', status: 'SENT' },
+    { id: 'T-003', orderId: 'ORD-2025-1142', eventName: 'Hokej — Sparta vs. Třinec', seatLabel: 'Skybox SB-05 — místo 3', guestEmail: null, status: 'ASSIGNED' },
+    { id: 'T-004', orderId: 'ORD-2025-1142', eventName: 'Hokej — Sparta vs. Třinec', seatLabel: 'Skybox SB-05 — místo 4', guestEmail: null, status: 'ASSIGNED' },
+    { id: 'T-005', orderId: 'ORD-2025-1142', eventName: 'Hokej — Sparta vs. Třinec', seatLabel: 'Skybox SB-05 — místo 5', guestEmail: 'petr.kovar@skoda.cz', status: 'SENT' },
   ],
   ludek: [
-    { id: 'T-010', orderId: 'ORD-2025-1201', eventName: 'Coldplay — Music of the Spheres', seatLabel: 'Sek. 222 — Řada A, Sedadlo 3', guestName: 'Luděk Procházka', guestEmail: 'ludek.prochazka@koop.cz', status: 'ASSIGNED' },
-    { id: 'T-011', orderId: 'ORD-2025-1201', eventName: 'Coldplay — Music of the Spheres', seatLabel: 'Sek. 222 — Řada A, Sedadlo 4', guestName: null, guestEmail: null, status: 'UNASSIGNED' },
-    { id: 'T-012', orderId: 'ORD-2025-1201', eventName: 'Coldplay — Music of the Spheres', seatLabel: 'Sek. 222 — Řada B, Sedadlo 1', guestName: 'Alena Horáčková', guestEmail: 'alena.horackova@koop.cz', status: 'SENT' },
-    { id: 'T-013', orderId: 'ORD-2025-1201', eventName: 'Coldplay — Music of the Spheres', seatLabel: 'Benefit — řada 205, A-7', guestName: null, guestEmail: null, status: 'UNASSIGNED' },
-    { id: 'T-014', orderId: 'ORD-2025-1201', eventName: 'Coldplay — Music of the Spheres', seatLabel: 'Benefit — řada 205, A-8', guestName: null, guestEmail: null, status: 'UNASSIGNED' },
+    { id: 'T-010', orderId: 'ORD-2025-1201', eventName: 'Coldplay — Music of the Spheres', seatLabel: 'Sek. 222 — Řada A, Sedadlo 3', guestEmail: null, status: 'ASSIGNED' },
+    { id: 'T-011', orderId: 'ORD-2025-1201', eventName: 'Coldplay — Music of the Spheres', seatLabel: 'Sek. 222 — Řada A, Sedadlo 4', guestEmail: null, status: 'ASSIGNED' },
+    { id: 'T-012', orderId: 'ORD-2025-1201', eventName: 'Coldplay — Music of the Spheres', seatLabel: 'Sek. 222 — Řada B, Sedadlo 1', guestEmail: 'alena.horackova@koop.cz', status: 'SENT' },
+    { id: 'T-013', orderId: 'ORD-2025-1201', eventName: 'Coldplay — Music of the Spheres', seatLabel: 'Benefit — řada 205, A-7', guestEmail: null, status: 'ASSIGNED' },
+    { id: 'T-014', orderId: 'ORD-2025-1201', eventName: 'Coldplay — Music of the Spheres', seatLabel: 'Benefit — řada 205, A-8', guestEmail: null, status: 'ASSIGNED' },
+    { id: 'T-015', orderId: 'ORD-2025-1189', eventName: 'Imagine Dragons — Loom Tour', seatLabel: 'Benefit — sek. 205, B-3', guestEmail: null, status: 'ASSIGNED' },
+    { id: 'T-016', orderId: 'ORD-2025-1189', eventName: 'Imagine Dragons — Loom Tour', seatLabel: 'Benefit — sek. 205, B-4', guestEmail: 'pavel.simanek@koop.cz', status: 'SENT' },
+    { id: 'T-017', orderId: 'ORD-2025-1189', eventName: 'Imagine Dragons — Loom Tour', seatLabel: 'Benefit — sek. 205, B-5', guestEmail: null, status: 'ASSIGNED' },
   ],
   martin: [
-    { id: 'T-020', orderId: 'ORD-2025-1155', eventName: 'Hokej — Sparta vs. Třinec', seatLabel: 'Benefit — sek. 209, A-5', guestName: 'Martin Gremlica', guestEmail: 'martin.gremlica@hotpeppers.cz', status: 'ASSIGNED' },
-    { id: 'T-021', orderId: 'ORD-2025-1155', eventName: 'Hokej — Sparta vs. Třinec', seatLabel: 'Benefit — sek. 209, A-6', guestName: null, guestEmail: null, status: 'UNASSIGNED' },
-    { id: 'T-022', orderId: 'ORD-2025-1155', eventName: 'Hokej — Sparta vs. Třinec', seatLabel: 'Benefit — sek. 209, A-7', guestName: 'Eva Procházková', guestEmail: 'eva.prochazova@hotpeppers.cz', status: 'SENT' },
+    { id: 'T-020', orderId: 'ORD-2025-1155', eventName: 'Hokej — Sparta vs. Třinec', seatLabel: 'Benefit — sek. 209, A-5', guestEmail: null, status: 'ASSIGNED' },
+    { id: 'T-021', orderId: 'ORD-2025-1155', eventName: 'Hokej — Sparta vs. Třinec', seatLabel: 'Benefit — sek. 209, A-6', guestEmail: null, status: 'ASSIGNED' },
+    { id: 'T-022', orderId: 'ORD-2025-1155', eventName: 'Hokej — Sparta vs. Třinec', seatLabel: 'Benefit — sek. 209, A-7', guestEmail: 'eva.prochazova@hotpeppers.cz', status: 'SENT' },
   ],
 }
 
@@ -715,7 +718,7 @@ export const REPORTING_DATA = {
   martin: [
     { eventName: 'Harry Styles', eventDate: daysFromNow(-20), allocated: 6, claimed: 4, auto: 3, released: 0, lapsed: 2 },
     { eventName: 'Beyoncé', eventDate: daysFromNow(-50), allocated: 4, claimed: 4, auto: 2, released: 0, lapsed: 0 },
-    { eventName: 'Hokej — Sparta vs. Třinec', eventDate: daysFromNow(9), allocated: 0, claimed: 0, auto: 3, released: 0, lapsed: 0 },
+    { eventName: 'Hokej — Sparta vs. Třinec', eventDate: daysFromNow(9), allocated: 3, claimed: 0, auto: 3, released: 0, lapsed: 0 },
   ],
 }
 

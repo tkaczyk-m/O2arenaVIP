@@ -1,52 +1,82 @@
-import { useEffect, useState } from 'react'
-import { Ticket, Send, Download, Edit3, Check, X, UserCheck, AlertCircle } from 'lucide-react'
+import { useEffect, useState, useMemo } from 'react'
+import { Ticket, Download, Gift, UserCheck } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import { getTickets } from '@/lib/mockData'
 import AccountTabNav from '@/components/account/AccountTabNav'
 
 const STATUS_CONFIG = {
   UNASSIGNED: { label: 'Nepřiřazeno', color: '#6b7280', bg: '#6b728018' },
-  ASSIGNED:   { label: 'Přiřazeno', color: '#2563eb', bg: '#2563eb18' },
-  SENT:       { label: 'Odesláno', color: '#059669', bg: '#05966918' },
-  RELEASED:   { label: 'Uvolněno', color: '#d97706', bg: '#d9770618' },
+  ASSIGNED:   { label: 'Přiřazeno',   color: '#2563eb', bg: '#2563eb18' },
+  SENT:       { label: 'Darováno',    color: '#059669', bg: '#05966918' },
+  RELEASED:   { label: 'Uvolněno',    color: '#d97706', bg: '#d9770618' },
 }
 
-function TicketRow({ ticket, onUpdate }) {
-  const [editing, setEditing] = useState(false)
-  const [name, setName] = useState(ticket.guestName || '')
-  const [email, setEmail] = useState(ticket.guestEmail || '')
-  const [saving, setSaving] = useState(false)
+function DarujModal({ defaultEmail, onConfirm, onClose }) {
+  const [email, setEmail] = useState(defaultEmail || '')
+  const [sending, setSending] = useState(false)
 
-  const cfg = STATUS_CONFIG[ticket.status] || STATUS_CONFIG.UNASSIGNED
-  const isUnassigned = ticket.status === 'UNASSIGNED'
-
-  function handleSave() {
-    if (!name.trim() || !email.trim()) return
-    setSaving(true)
+  function handleSubmit(e) {
+    e.preventDefault()
+    if (!email.trim()) return
+    setSending(true)
     setTimeout(() => {
-      onUpdate(ticket.id, { guestName: name.trim(), guestEmail: email.trim(), status: 'ASSIGNED' })
-      setEditing(false)
-      setSaving(false)
+      onConfirm(email.trim())
+      onClose()
     }, 400)
   }
 
-  function handleCancel() {
-    setName(ticket.guestName || '')
-    setEmail(ticket.guestEmail || '')
-    setEditing(false)
-  }
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+      <div className="card rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+        <h3 className="font-bold text-base mb-1" style={{ color: 'var(--color-text)' }}>
+          Darovat vstupenku
+        </h3>
+        <p className="text-xs mb-4" style={{ color: 'var(--color-text-muted)' }}>
+          Vstupenka bude odeslána na zadaný e-mail.
+        </p>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div>
+            <label className="text-xs font-medium mb-1 block" style={{ color: 'var(--color-text-muted)' }}>
+              E-mail příjemce
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="prijemce@firma.cz"
+              className="input-field w-full"
+              required
+              autoFocus
+            />
+          </div>
+          <div className="flex gap-2 pt-1">
+            <button type="submit" disabled={sending} className="btn-primary flex-1 justify-center">
+              {sending ? 'Odesílám…' : 'Odeslat vstupenku'}
+            </button>
+            <button type="button" onClick={onClose} className="btn-ghost flex-1 justify-center">
+              Zrušit
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
 
-  function handleSend() {
-    if (ticket.status !== 'ASSIGNED') return
-    setTimeout(() => {
-      onUpdate(ticket.id, { status: 'SENT' })
-    }, 300)
+function TicketRow({ ticket, onUpdate, currentUser }) {
+  const [showDarujModal, setShowDarujModal] = useState(false)
+
+  const cfg = STATUS_CONFIG[ticket.status] || STATUS_CONFIG.UNASSIGNED
+  const isAssigned = ticket.status === 'ASSIGNED'
+  const isSent = ticket.status === 'SENT'
+  const canDownload = isAssigned || isSent
+
+  function handleDarovat(email) {
+    onUpdate(ticket.id, { guestEmail: email, status: 'SENT' })
   }
 
   return (
-    <div
-      className="card rounded-xl p-4 mb-3"
-    >
+    <div className="card rounded-xl p-4 mb-3">
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -56,30 +86,17 @@ function TicketRow({ ticket, onUpdate }) {
             >
               {cfg.label}
             </span>
-            <span className="text-xs font-mono" style={{ color: 'var(--color-text-muted)' }}>{ticket.id}</span>
+            <span className="text-xs font-mono" style={{ color: 'var(--color-text-muted)' }}>
+              {ticket.id}
+            </span>
           </div>
           <div className="font-medium text-sm" style={{ color: 'var(--color-text)' }}>
             {ticket.seatLabel}
           </div>
-          <div className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-            {ticket.eventName}
-          </div>
         </div>
 
-        {/* Actions */}
         <div className="flex items-center gap-1.5 shrink-0">
-          {ticket.status === 'ASSIGNED' && (
-            <button
-              onClick={handleSend}
-              className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg font-medium transition-colors"
-              style={{ color: '#059669', backgroundColor: '#05966918' }}
-              title="Odeslat e-ticket hostu"
-            >
-              <Send size={12} />
-              Odeslat
-            </button>
-          )}
-          {ticket.status === 'SENT' && (
+          {canDownload && (
             <button
               className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg font-medium"
               style={{ color: 'var(--color-primary)', backgroundColor: 'var(--color-primary)' + '12' }}
@@ -89,102 +106,90 @@ function TicketRow({ ticket, onUpdate }) {
               eTicket
             </button>
           )}
-          {!editing && (
+          {isAssigned && (
             <button
-              onClick={() => setEditing(true)}
-              className="p-1.5 rounded-lg transition-colors"
-              style={{ color: 'var(--color-text-muted)' }}
-              onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--color-surface-2)'}
-              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-              title="Upravit přiřazení"
+              onClick={() => setShowDarujModal(true)}
+              className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg font-medium transition-colors"
+              style={{ color: '#059669', backgroundColor: '#05966918' }}
             >
-              <Edit3 size={14} />
+              <Gift size={12} />
+              Darovat
             </button>
           )}
         </div>
       </div>
 
-      {/* Guest info */}
-      {!editing ? (
-        <div
-          className="rounded-lg px-3 py-2 flex items-center gap-2"
-          style={{ backgroundColor: 'var(--color-surface-2)' }}
-        >
-          {isUnassigned ? (
-            <>
-              <AlertCircle size={14} style={{ color: 'var(--color-text-muted)' }} />
-              <span className="text-xs italic" style={{ color: 'var(--color-text-muted)' }}>
-                Vstupenka není přiřazena — klikněte na tužku pro přiřazení hosta
-              </span>
-            </>
-          ) : (
-            <>
-              <UserCheck size={14} style={{ color: '#2563eb' }} />
-              <div className="flex-1 min-w-0">
-                <span className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>
-                  {ticket.guestName}
-                </span>
-                <span className="mx-2 opacity-30">·</span>
-                <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                  {ticket.guestEmail}
-                </span>
-              </div>
-            </>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-2">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <input
-              type="text"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="Jméno a příjmení hosta"
-              className="input-field text-sm"
-            />
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="E-mail hosta"
-              className="input-field text-sm"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleSave}
-              disabled={saving || !name.trim() || !email.trim()}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
-              style={{
-                backgroundColor: 'var(--color-primary)',
-                color: 'var(--color-primary-fg)',
-              }}
-            >
-              <Check size={13} />
-              {saving ? 'Ukládám…' : 'Uložit'}
-            </button>
-            <button
-              onClick={handleCancel}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
-              style={{
-                color: 'var(--color-text-muted)',
-                backgroundColor: 'var(--color-surface-2)',
-              }}
-            >
-              <X size={13} />
-              Zrušit
-            </button>
+      {/* VIP account assignment (auto, read-only) */}
+      <div className="rounded-lg px-3 py-2" style={{ backgroundColor: 'var(--color-surface-2)' }}>
+        <div className="flex items-center gap-2">
+          <UserCheck size={14} style={{ color: '#2563eb' }} />
+          <div className="flex-1 min-w-0">
+            <span className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>
+              {currentUser?.name}
+            </span>
+            <span className="mx-2 opacity-30">·</span>
+            <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+              {currentUser?.email}
+            </span>
           </div>
         </div>
+        {isSent && ticket.guestEmail && (
+          <div
+            className="flex items-center gap-1.5 mt-1.5 pt-1.5 border-t"
+            style={{ borderColor: 'var(--color-border)' }}
+          >
+            <Gift size={11} style={{ color: '#059669' }} />
+            <span className="text-xs" style={{ color: '#059669' }}>
+              Darováno → {ticket.guestEmail}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {showDarujModal && (
+        <DarujModal
+          defaultEmail={currentUser?.email || ''}
+          onConfirm={handleDarovat}
+          onClose={() => setShowDarujModal(false)}
+        />
       )}
     </div>
   )
 }
 
+function EventGroup({ eventName, tickets, onUpdate, currentUser }) {
+  return (
+    <div className="mb-6">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
+          {eventName}
+        </h2>
+        <button
+          className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg font-medium"
+          style={{ color: 'var(--color-primary)', backgroundColor: 'var(--color-primary)' + '12' }}
+          onClick={() => alert(`Hromadné stažení vstupenek: ${eventName} (demo)`)}
+        >
+          <Download size={12} />
+          Stáhnout vše
+        </button>
+      </div>
+      {tickets.map(ticket => (
+        <TicketRow
+          key={ticket.id}
+          ticket={ticket}
+          onUpdate={onUpdate}
+          currentUser={currentUser}
+        />
+      ))}
+    </div>
+  )
+}
+
 export default function TicketsPage() {
-  const { currentPartner } = useApp()
+  const { currentPartner, currentUser } = useApp()
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(true)
+  const [selectedEvent, setSelectedEvent] = useState('all')
 
   useEffect(() => {
     if (!currentPartner) return
@@ -198,7 +203,22 @@ export default function TicketsPage() {
     setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, ...changes } : t))
   }
 
-  const unassignedCount = tickets.filter(t => t.status === 'UNASSIGNED').length
+  const eventNames = useMemo(
+    () => [...new Set(tickets.map(t => t.eventName))],
+    [tickets]
+  )
+
+  const grouped = useMemo(() => {
+    const filtered = selectedEvent === 'all'
+      ? tickets
+      : tickets.filter(t => t.eventName === selectedEvent)
+    return filtered.reduce((acc, t) => {
+      if (!acc[t.eventName]) acc[t.eventName] = []
+      acc[t.eventName].push(t)
+      return acc
+    }, {})
+  }, [tickets, selectedEvent])
+
   const assignedCount = tickets.filter(t => t.status === 'ASSIGNED').length
   const sentCount = tickets.filter(t => t.status === 'SENT').length
 
@@ -227,11 +247,10 @@ export default function TicketsPage() {
       ) : (
         <>
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-3 mb-5">
+          <div className="grid grid-cols-2 gap-3 mb-5">
             {[
-              { label: 'Nepřiřazeno', value: unassignedCount, color: '#6b7280' },
-              { label: 'Přiřazeno', value: assignedCount, color: '#2563eb' },
-              { label: 'Odesláno', value: sentCount, color: '#059669' },
+              { label: 'Přiřazeno k účtu', value: assignedCount, color: '#2563eb' },
+              { label: 'Darováno', value: sentCount, color: '#059669' },
             ].map(({ label, value, color }) => (
               <div key={label} className="card rounded-xl p-3 text-center">
                 <div className="text-lg font-bold" style={{ color }}>{value}</div>
@@ -240,20 +259,47 @@ export default function TicketsPage() {
             ))}
           </div>
 
-          {unassignedCount > 0 && (
-            <div
-              className="flex items-center gap-2 px-3 py-2.5 rounded-lg mb-4 text-sm"
-              style={{ backgroundColor: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.25)' }}
-            >
-              <AlertCircle size={15} className="text-amber-500 shrink-0" />
-              <span className="text-amber-700 dark:text-amber-400">
-                {unassignedCount} {unassignedCount === 1 ? 'vstupenka čeká' : 'vstupenek čeká'} na přiřazení hostu
-              </span>
+          {/* Event filter pills — only if multiple events */}
+          {eventNames.length > 1 && (
+            <div className="flex flex-wrap gap-2 mb-5">
+              <button
+                onClick={() => setSelectedEvent('all')}
+                className="text-xs px-3 py-1.5 rounded-full font-medium transition-colors"
+                style={{
+                  backgroundColor: selectedEvent === 'all' ? 'var(--color-primary)' : 'var(--color-surface-2)',
+                  color: selectedEvent === 'all' ? 'var(--color-primary-fg)' : 'var(--color-text-muted)',
+                }}
+              >
+                Vše ({tickets.length})
+              </button>
+              {eventNames.map(name => {
+                const count = tickets.filter(t => t.eventName === name).length
+                return (
+                  <button
+                    key={name}
+                    onClick={() => setSelectedEvent(name)}
+                    className="text-xs px-3 py-1.5 rounded-full font-medium transition-colors"
+                    style={{
+                      backgroundColor: selectedEvent === name ? 'var(--color-primary)' : 'var(--color-surface-2)',
+                      color: selectedEvent === name ? 'var(--color-primary-fg)' : 'var(--color-text-muted)',
+                    }}
+                  >
+                    {name} ({count})
+                  </button>
+                )
+              })}
             </div>
           )}
 
-          {tickets.map(ticket => (
-            <TicketRow key={ticket.id} ticket={ticket} onUpdate={handleUpdate} />
+          {/* Tickets grouped by event */}
+          {Object.entries(grouped).map(([eventName, eventTickets]) => (
+            <EventGroup
+              key={eventName}
+              eventName={eventName}
+              tickets={eventTickets}
+              onUpdate={handleUpdate}
+              currentUser={currentUser}
+            />
           ))}
         </>
       )}

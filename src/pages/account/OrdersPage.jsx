@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { ShoppingBag, Download, Calendar, CreditCard, FileText } from 'lucide-react'
+import { ShoppingBag, Download, Calendar, CreditCard } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
-import { getOrders } from '@/lib/mockData'
+import { getOrders, getPartner } from '@/lib/mockData'
 import StatusBadge from '@/components/shared/StatusBadge'
 import AccountTabNav from '@/components/account/AccountTabNav'
 
@@ -29,7 +29,7 @@ function formatDate(d) {
   return new Date(d).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-function OrderRow({ order }) {
+function OrderRow({ order, remainingBudget }) {
   const kindCfg = KIND_CONFIG[order.kind] || {}
   const hasCash = order.totalCZK > 0
   const hasBenefit = order.benefitValue > 0
@@ -82,6 +82,11 @@ function OrderRow({ order }) {
               <div className="text-xs font-normal" style={{ color: 'var(--color-text-muted)' }}>
                 z benefit budgetu
               </div>
+              {remainingBudget !== null && (
+                <div className="text-xs font-normal mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                  zbývá {remainingBudget.toLocaleString('cs-CZ')} Kč
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-sm font-semibold" style={{ color: 'var(--color-text-muted)' }}>
@@ -164,11 +169,18 @@ export default function OrdersPage() {
   const { currentPartner } = useApp()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
+  const [remainingBudget, setRemainingBudget] = useState(null)
 
   useEffect(() => {
     if (!currentPartner) return
-    getOrders(currentPartner.id).then(data => {
-      setOrders(data)
+    Promise.all([
+      getOrders(currentPartner.id),
+      getPartner(currentPartner.id),
+    ]).then(([orderData, partnerData]) => {
+      setOrders(orderData)
+      if (partnerData?.benefitBudgetCZK > 0) {
+        setRemainingBudget(partnerData.benefitBudgetCZK - partnerData.spentBenefitCZK)
+      }
       setLoading(false)
     })
   }, [currentPartner])
@@ -211,7 +223,7 @@ export default function OrdersPage() {
             ))}
           </div>
 
-          {orders.map(order => <OrderRow key={order.id} order={order} />)}
+          {orders.map(order => <OrderRow key={order.id} order={order} remainingBudget={remainingBudget} />)}
         </div>
       )}
     </div>
