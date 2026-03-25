@@ -69,7 +69,7 @@ export default function AdminShell() {
 
   const handleLogout = () => {
     adminLogout()
-    navigate('/admin/login')
+    navigate('/admin-clients/login')
   }
 
   return (
@@ -94,7 +94,7 @@ export default function AdminShell() {
         {/* Nav */}
         <nav className="flex-1 p-3 space-y-0.5">
           <NavLink
-            to="/admin/clients"
+            to="/admin-clients/clients"
             className={({ isActive }) => clsx(
               'flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
             )}

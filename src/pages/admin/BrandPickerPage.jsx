@@ -16,7 +16,7 @@ export default function BrandPickerPage() {
 
   const handlePick = (brand) => {
     setActiveBrand(brand)
-    navigate('/admin/clients')
+    navigate('/admin-clients/clients')
   }
 
   return (

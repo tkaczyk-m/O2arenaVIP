@@ -1,21 +1,18 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, Building2, Loader2 } from 'lucide-react'
-import { useAdmin } from '@/context/AdminContext'
+import { Eye, EyeOff, CalendarDays, Loader2 } from 'lucide-react'
+import { adminLogin, getAdminSession, DEMO_CREDENTIALS } from '@/lib/adminAuth'
 
-export default function AdminLoginPage() {
-  const { adminLogin, adminUser, ADMIN_USERS } = useAdmin()
+export default function EventsAdminLoginPage() {
   const navigate = useNavigate()
-
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // Already logged in
-  if (adminUser) {
-    navigate('/admin-clients/brand', { replace: true })
+  if (getAdminSession()) {
+    navigate('/admin-event/events', { replace: true })
     return null
   }
 
@@ -23,32 +20,18 @@ export default function AdminLoginPage() {
     e.preventDefault()
     setError('')
     setLoading(true)
-    await new Promise(r => setTimeout(r, 500))
-
-    const user = ADMIN_USERS.find(
-      u => u.email.toLowerCase() === email.trim().toLowerCase() && u.password === password
-    )
-    if (user) {
-      adminLogin(user)
-      navigate('/admin-clients/brand')
+    await new Promise(r => setTimeout(r, 400))
+    const result = adminLogin(username.trim(), password)
+    if (result.success) {
+      navigate('/admin-event/events', { replace: true })
     } else {
-      setError('Nesprávný e-mail nebo heslo.')
+      setError('Nesprávné přihlašovací údaje.')
       setLoading(false)
     }
   }
 
-  const fillDemo = (user) => {
-    setEmail(user.email)
-    setPassword(user.password)
-    setError('')
-  }
-
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-4"
-      style={{ backgroundColor: '#0e1a2e' }}
-    >
-      {/* Background pattern */}
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#0e1a2e' }}>
       <div
         className="absolute inset-0 opacity-5"
         style={{
@@ -58,40 +41,31 @@ export default function AdminLoginPage() {
       />
 
       <div className="relative w-full max-w-sm">
-        {/* Header */}
         <div className="text-center mb-8">
           <div
             className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4"
             style={{ backgroundColor: '#0066cc22', border: '1px solid #0066cc44' }}
           >
-            <Building2 size={26} style={{ color: '#0066cc' }} />
+            <CalendarDays size={26} style={{ color: '#0066cc' }} />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-1">Admin Portal</h1>
-          <p className="text-sm" style={{ color: '#94a3b8' }}>Správa B2B partnerů</p>
+          <h1 className="text-2xl font-bold text-white mb-1">Events Admin</h1>
+          <p className="text-sm" style={{ color: '#94a3b8' }}>Správa akcí a termínů</p>
         </div>
 
-        {/* Card */}
-        <div
-          className="rounded-xl p-6 shadow-xl"
-          style={{ backgroundColor: '#1e2d42', border: '1px solid #2d3f5a' }}
-        >
+        <div className="rounded-xl p-6 shadow-xl" style={{ backgroundColor: '#1e2d42', border: '1px solid #2d3f5a' }}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: '#94a3b8' }}>
-                E-mail
+                Uživatelské jméno
               </label>
               <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="vas@arena.cz"
+                type="text"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                placeholder="o2arena"
                 required
-                className="w-full px-3 py-2.5 rounded-lg text-sm outline-none transition-all"
-                style={{
-                  backgroundColor: '#0e1a2e',
-                  border: '1px solid #2d3f5a',
-                  color: '#e2e8f0',
-                }}
+                className="w-full px-3 py-2.5 rounded-lg text-sm outline-none"
+                style={{ backgroundColor: '#0e1a2e', border: '1px solid #2d3f5a', color: '#e2e8f0' }}
                 onFocus={e => { e.target.style.borderColor = '#0066cc' }}
                 onBlur={e => { e.target.style.borderColor = '#2d3f5a' }}
               />
@@ -108,12 +82,8 @@ export default function AdminLoginPage() {
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full px-3 py-2.5 pr-10 rounded-lg text-sm outline-none transition-all"
-                  style={{
-                    backgroundColor: '#0e1a2e',
-                    border: '1px solid #2d3f5a',
-                    color: '#e2e8f0',
-                  }}
+                  className="w-full px-3 py-2.5 pr-10 rounded-lg text-sm outline-none"
+                  style={{ backgroundColor: '#0e1a2e', border: '1px solid #2d3f5a', color: '#e2e8f0' }}
                   onFocus={e => { e.target.style.borderColor = '#0066cc' }}
                   onBlur={e => { e.target.style.borderColor = '#2d3f5a' }}
                 />
@@ -145,28 +115,24 @@ export default function AdminLoginPage() {
             </button>
           </form>
 
-          {/* Demo credentials */}
           <div className="mt-5 pt-4" style={{ borderTop: '1px solid #2d3f5a' }}>
-            <p className="text-xs mb-2.5 text-center" style={{ color: '#64748b' }}>Demo přístupy</p>
+            <p className="text-xs mb-2.5 text-center" style={{ color: '#64748b' }}>Demo přístupy (kliknutím vyplníte)</p>
             <div className="space-y-1.5">
-              {ADMIN_USERS.map(u => (
+              {DEMO_CREDENTIALS.map(c => (
                 <button
-                  key={u.id}
+                  key={c.username}
                   type="button"
-                  onClick={() => fillDemo(u)}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-colors"
+                  onClick={() => { setUsername(c.username); setPassword(c.password); setError('') }}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs"
                   style={{ backgroundColor: '#0e1a2e', color: '#94a3b8', border: '1px solid #2d3f5a' }}
                   onMouseEnter={e => { e.currentTarget.style.borderColor = '#0066cc66' }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = '#2d3f5a' }}
                 >
-                  <span className="font-medium" style={{ color: '#e2e8f0' }}>{u.name}</span>
-                  <span style={{ color: '#64748b' }}>{u.email}</span>
+                  <span className="font-medium" style={{ color: '#e2e8f0' }}>{c.brandName}</span>
+                  <span style={{ color: '#64748b' }}>{c.username} / {c.password}</span>
                 </button>
               ))}
             </div>
-            <p className="text-xs text-center mt-2" style={{ color: '#475569' }}>
-              heslo: <span style={{ color: '#94a3b8' }}>admin123</span>
-            </p>
           </div>
         </div>
       </div>

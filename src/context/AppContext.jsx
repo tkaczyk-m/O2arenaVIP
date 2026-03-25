@@ -57,7 +57,6 @@ export function AppProvider({ children }) {
   const logout = useCallback(() => {
     clearMockSession()
     setCurrentUser(null)
-    setCurrentPartner(null)
   }, [])
 
   const refreshSession = useCallback(() => {
