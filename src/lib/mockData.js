@@ -1,3 +1,6 @@
+import { getPublishedEvents, getEvent as storeGetEvent } from '@/lib/eventStore'
+import { getUserById as getStoreUser, getPartner as getStorePartner } from '@/lib/partnerStore'
+
 /**
  * Complete mock data for the VIP Partner Portal.
  * Three personas with different allocation types.
@@ -65,56 +68,66 @@ export const CATERING_ADDONS = [
 
 // ─── ARENA MAP DEFINITION ──────────────────────────────────────────────────────
 // Club sections (2xx) in the arena
-export const CLUB_SECTIONS = {
-  '222': { id: '222', label: 'Sek. 222', rows: 5, seatsPerRow: 12 },
-  '205': { id: '205', label: 'Sek. 205', rows: 5, seatsPerRow: 12 },
-  '209': { id: '209', label: 'Sek. 209', rows: 5, seatsPerRow: 12 },
-}
+// 26 club sections: 201–226, each with 6 rows × 12 seats
+export const CLUB_SECTIONS = Object.fromEntries(
+  Array.from({ length: 26 }, (_, i) => {
+    const id = String(201 + i)
+    return [id, { id, label: `Sek. ${id}`, rows: 6, seatsPerRow: 12 }]
+  })
+)
 
-// Skyboxes (3xx range)
-export const SKYBOXES = {
-  'SB-05': { id: 'SB-05', label: 'Skybox 05', section: '366', capacity: 10, floor: 3 },
-  'SB-08': { id: 'SB-08', label: 'Skybox 08', section: '308', capacity: 10, floor: 3 },
-  'SB-09': { id: 'SB-09', label: 'Skybox 09', section: '308', capacity: 8, floor: 3 },
-}
+// 28 skyboxes: SB-01–SB-28 (one per outer-ring segment)
+export const SKYBOXES = Object.fromEntries(
+  Array.from({ length: 28 }, (_, i) => {
+    const num = String(i + 1).padStart(2, '0')
+    const id = `SB-${num}`
+    return [id, { id, label: `Skybox ${num}`, capacity: 10, floor: 3 }]
+  })
+)
 
 // Generate seat unavailability (random ~20% per section, stable)
 function genUnavailable(sectionId, rows, seatsPerRow) {
   const unavailable = new Set()
-  // Use deterministic pattern based on section id
   const seed = sectionId.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
-  for (let r = 0; r < rows; r++) {
+  for (let r = 1; r <= rows; r++) {
     for (let s = 1; s <= seatsPerRow; s++) {
-      if ((seed * (r + 1) * s) % 7 === 0) {
-        unavailable.add(`${String.fromCharCode(65 + r)}-${s}`)
+      if ((seed * r * s) % 7 === 0) {
+        unavailable.add(`${r}-${s}`)
       }
     }
   }
   return unavailable
 }
 
-export const SECTION_UNAVAILABLE = {
-  '222': genUnavailable('222', 5, 12),
-  '205': genUnavailable('205', 5, 12),
-  '209': genUnavailable('209', 5, 12),
-}
+export const SECTION_UNAVAILABLE = Object.fromEntries(
+  Array.from({ length: 26 }, (_, i) => [String(201 + i), genUnavailable(String(201 + i), 6, 12)])
+)
 
 // ─── PARTNERS ──────────────────────────────────────────────────────────────────
 export const PARTNERS = {
   barbora: {
     id: 'barbora',
+    brandId: 'o2arena',
     userId: 'user-barbora',
     companyName: 'ŠKODA Auto a.s.',
     ico: '00177041',
+    address: 'tř. Václava Klementa 869, 293 01 Mladá Boleslav',
+    contactPerson: {
+      firstName: 'Barbora',
+      lastName: 'Chaloupecká',
+      email: 'barbora.chaloupecka@skoda-auto.cz',
+    },
     contract: {
       id: 'VIP-2024-0089',
       type: 'Premium Skybox',
       validFrom: '2024-01-01',
       validTo: '2026-12-31',
+      amountCZK: 1200000,
       accountManagerName: 'Petra Novotná',
       accountManagerEmail: 'petra.novotna@arena.cz',
       accountManagerPhone: '+420 602 123 456',
     },
+    seats: { skyboxes: ['SB-05'], clubSections: [] },
     allocationKinds: ['TYPE1'],
     type1Allocation: {
       skyboxes: ['SB-05'],
@@ -125,18 +138,27 @@ export const PARTNERS = {
   },
   ludek: {
     id: 'ludek',
+    brandId: 'o2arena',
     userId: 'user-ludek',
     companyName: 'Kooperativa pojišťovna, a.s.',
     ico: '47116617',
+    address: 'Templová 747, 110 01 Praha 1',
+    contactPerson: {
+      firstName: 'Luděk',
+      lastName: 'Procházka',
+      email: 'ludek.prochazka@koop.cz',
+    },
     contract: {
       id: 'VIP-2023-0047',
       type: 'Klub Premium',
       validFrom: '2023-07-01',
       validTo: '2025-06-30',
+      amountCZK: 850000,
       accountManagerName: 'Tomáš Říha',
       accountManagerEmail: 'tomas.riha@arena.cz',
       accountManagerPhone: '+420 603 456 789',
     },
+    seats: { skyboxes: [], clubSections: ['222'] },
     allocationKinds: ['TYPE1', 'TYPE2', 'TYPE3'],
     type1Allocation: {
       skyboxes: [],
@@ -147,18 +169,27 @@ export const PARTNERS = {
   },
   martin: {
     id: 'martin',
+    brandId: 'o2arena',
     userId: 'user-martin',
     companyName: 'Hot Peppers s.r.o.',
     ico: '08941234',
+    address: 'Korunní 2569/108, 101 00 Praha 10',
+    contactPerson: {
+      firstName: 'Martin',
+      lastName: 'Gremlica',
+      email: 'martin.gremlica@hotpeppers.cz',
+    },
     contract: {
       id: 'VIP-2025-0012',
       type: 'Benefit Partner',
       validFrom: '2025-01-01',
       validTo: '2025-12-31',
+      amountCZK: 450000,
       accountManagerName: 'Jana Horáčková',
       accountManagerEmail: 'jana.horackova@arena.cz',
       accountManagerPhone: '+420 605 789 012',
     },
+    seats: { skyboxes: [], clubSections: ['209'] },
     allocationKinds: ['TYPE2', 'TYPE3'],
     type1Allocation: null,
     benefitBudgetCZK: 150000,
@@ -196,6 +227,26 @@ export const USERS = {
     active: true,
   },
 }
+
+// ─── ADMIN USERS (arena employees) ────────────────────────────────────────────
+export const ADMIN_USERS = [
+  {
+    id: 'admin-petra',
+    name: 'Petra Novotná',
+    email: 'petra.novotna@arena.cz',
+    password: 'admin123',
+    initials: 'PN',
+    role: 'arena_admin',
+  },
+  {
+    id: 'admin-tomas',
+    name: 'Tomáš Říha',
+    email: 'tomas.riha@arena.cz',
+    password: 'admin123',
+    initials: 'TR',
+    role: 'arena_admin',
+  },
+]
 
 // Extra users per partner (for Users tab)
 export const PARTNER_USERS = {
@@ -733,7 +784,7 @@ export function setMockSession(userId) {
 export function getMockSession() {
   if (_currentUserId) return _currentUserId
   const stored = localStorage.getItem('vip_session')
-  if (stored && USERS[stored]) {
+  if (stored && (USERS[stored] || getStoreUser(stored))) {
     _currentUserId = stored
     return stored
   }
@@ -747,39 +798,91 @@ export function clearMockSession() {
 
 export function getCurrentUser() {
   const uid = getMockSession()
-  return uid ? USERS[uid] : null
+  if (!uid) return null
+  return USERS[uid] || getStoreUser(uid) || null
 }
 
 export function getCurrentPartner() {
   const user = getCurrentUser()
   if (!user) return null
-  return PARTNERS[user.partnerId]
+  return PARTNERS[user.partnerId] || getStorePartner(user.partnerId) || null
+}
+
+// ─── ADMIN SESSION ─────────────────────────────────────────────────────────────
+let _adminUserId = null
+
+export function setAdminSession(userId) {
+  _adminUserId = userId
+  localStorage.setItem('admin_session', userId)
+}
+
+export function getAdminSession() {
+  if (_adminUserId) return ADMIN_USERS.find(u => u.id === _adminUserId) || null
+  const stored = localStorage.getItem('admin_session')
+  if (stored) {
+    const user = ADMIN_USERS.find(u => u.id === stored)
+    if (user) { _adminUserId = stored; return user }
+  }
+  return null
+}
+
+export function clearAdminSession() {
+  _adminUserId = null
+  localStorage.removeItem('admin_session')
+  localStorage.removeItem('admin_brand')
 }
 
 // ─── REPOSITORY FUNCTIONS ─────────────────────────────────────────────────────
 const delay = (ms = 200) => new Promise(r => setTimeout(r, ms))
 
-export async function getEventsForPartner(partnerId) {
+export async function getEventsForPartner(partnerId, brandKey) {
   await delay()
-  const partner = PARTNERS[partnerId]
+  const partner = PARTNERS[partnerId] || getStorePartner(partnerId)
   if (!partner) return []
+
+  const brandEvents = getPublishedEvents(brandKey || 'o2arena')
 
   // Collect all event IDs this partner has allocations for
   const eventIds = new Set()
   Object.keys(EVENT_ALLOCATIONS).forEach(key => {
-    const [pid] = key.split(':')
-    if (pid === partnerId) {
-      const [, eid] = key.split(':')
-      eventIds.add(eid)
-    }
+    const [pid, eid] = key.split(':')
+    if (pid === partnerId) eventIds.add(eid)
   })
 
-  return EVENTS
-    .filter(e => eventIds.has(e.id))
+  return brandEvents
     .map(event => {
       const allocKey = `${partnerId}:${event.id}`
-      const allocations = EVENT_ALLOCATIONS[allocKey] || []
-      // Determine overall status for display
+      let allocations = EVENT_ALLOCATIONS[allocKey] || []
+
+      // Auto-generate TYPE1 allocation from contracted seats when no explicit record exists
+      if (allocations.length === 0 && partner.allocationKinds?.includes('TYPE1') && partner.type1Allocation) {
+        const t1 = partner.type1Allocation
+        if ((t1.skyboxes?.length > 0) || (t1.clubSections?.length > 0)) {
+          const eventDate = new Date(event.date)
+          const deadlineDate = new Date(eventDate.getTime() - 7 * 24 * 60 * 60 * 1000)
+          const autoAlloc = {
+            id: `ea-auto-${partnerId}-${event.id}`,
+            eventId: event.id,
+            partnerId,
+            kind: 'TYPE1',
+            status: deadlineDate < new Date() ? 'LAPSED' : 'OPTION_PENDING',
+            optionDeadline: deadlineDate.toISOString(),
+            skyboxes: t1.skyboxes || [],
+            clubSections: t1.clubSections || [],
+            venueFeeCZKPerSkybox: t1.skyboxes?.length > 0 ? 28000 : null,
+            venueFeeCZKPerSeat: t1.clubSections?.length > 0 ? 1500 : null,
+            cateringFeeCZKPerSeat: 1200,
+            transactionFeePercent: 5,
+          }
+          allocations = [autoAlloc]
+        }
+      }
+
+      // Events with no allocations still appear — shown as informational
+      if (allocations.length === 0) {
+        return { ...event, allocations: [], displayStatus: 'INFO', soonestDeadline: null }
+      }
+
       const hasAuto = allocations.some(a => a.kind === 'TYPE3' && a.status === 'AUTO_CONFIRMED')
       const hasPending = allocations.some(a => a.status === 'OPTION_PENDING')
       const hasConfirmed = allocations.some(a => a.status === 'CONFIRMED')
@@ -791,7 +894,6 @@ export async function getEventsForPartner(partnerId) {
       else if (hasAuto && !hasPending) displayStatus = 'AUTO_CONFIRMED'
       else if (hasPending) displayStatus = 'OPTION_PENDING'
 
-      // Earliest deadline among pending
       const deadlines = allocations
         .filter(a => a.optionDeadline && a.status === 'OPTION_PENDING')
         .map(a => new Date(a.optionDeadline))
@@ -806,12 +908,39 @@ export async function getEventsForPartner(partnerId) {
 
 export async function getEventDetail(eventId) {
   await delay()
-  return EVENTS.find(e => e.id === eventId) || null
+  return storeGetEvent(eventId) || null
 }
 
 export async function getEventAllocations(partnerId, eventId) {
   await delay()
-  return EVENT_ALLOCATIONS[`${partnerId}:${eventId}`] || []
+  const explicit = EVENT_ALLOCATIONS[`${partnerId}:${eventId}`]
+  if (explicit) return explicit
+
+  // Fall back to auto-generating from contracted seats
+  const partner = PARTNERS[partnerId] || getStorePartner(partnerId)
+  if (partner?.allocationKinds?.includes('TYPE1') && partner.type1Allocation) {
+    const t1 = partner.type1Allocation
+    if ((t1.skyboxes?.length > 0) || (t1.clubSections?.length > 0)) {
+      const event = storeGetEvent(eventId)
+      const eventDate = event ? new Date(event.date) : new Date()
+      const deadlineDate = new Date(eventDate.getTime() - 7 * 24 * 60 * 60 * 1000)
+      return [{
+        id: `ea-auto-${partnerId}-${eventId}`,
+        eventId,
+        partnerId,
+        kind: 'TYPE1',
+        status: deadlineDate < new Date() ? 'LAPSED' : 'OPTION_PENDING',
+        optionDeadline: deadlineDate.toISOString(),
+        skyboxes: t1.skyboxes || [],
+        clubSections: t1.clubSections || [],
+        venueFeeCZKPerSkybox: t1.skyboxes?.length > 0 ? 28000 : null,
+        venueFeeCZKPerSeat: t1.clubSections?.length > 0 ? 1500 : null,
+        cateringFeeCZKPerSeat: 1200,
+        transactionFeePercent: 5,
+      }]
+    }
+  }
+  return []
 }
 
 export async function getOrders(partnerId) {
@@ -827,7 +956,7 @@ export async function getTickets(partnerId) {
 
 export async function getPartner(partnerId) {
   await delay()
-  return PARTNERS[partnerId] || null
+  return PARTNERS[partnerId] || getStorePartner(partnerId) || null
 }
 
 export async function getPartnerUsers(partnerId) {

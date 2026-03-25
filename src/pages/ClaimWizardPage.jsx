@@ -166,12 +166,18 @@ function PriceSummary({ allocation, selectedSkyboxes, selectedSeatsBySection, se
 }
 
 // ─── Step 1: Seat selection ────────────────────────────────────────────────────
-function Step1({ allocations, selectedSkyboxes, setSelectedSkyboxes, selectedSeatsBySection, setSelectedSeatsBySection, t }) {
+function Step1({ allocations, currentPartner, selectedSkyboxes, setSelectedSkyboxes, selectedSeatsBySection, setSelectedSeatsBySection, t }) {
   const [activeSeatPickerSection, setActiveSeatPickerSection] = useState(null)
 
   const type1Allocs = allocations.filter(a => a.kind === 'TYPE1')
-  const allSkyboxes = type1Allocs.flatMap(a => a.skyboxes || [])
-  const allClubSections = type1Allocs.flatMap(a => a.clubSections || [])
+  // Fall back to partner's contracted allocation when no event-specific allocations exist
+  const partnerHasType1 = currentPartner?.allocationKinds?.includes('TYPE1')
+  const allSkyboxes = type1Allocs.length > 0
+    ? type1Allocs.flatMap(a => a.skyboxes || [])
+    : (partnerHasType1 ? currentPartner?.type1Allocation?.skyboxes || [] : [])
+  const allClubSections = type1Allocs.length > 0
+    ? type1Allocs.flatMap(a => a.clubSections || [])
+    : (partnerHasType1 ? currentPartner?.type1Allocation?.clubSections || [] : [])
 
   const toggleSkybox = (skyboxId) => {
     setSelectedSkyboxes(prev =>
@@ -197,7 +203,7 @@ function Step1({ allocations, selectedSkyboxes, setSelectedSkyboxes, selectedSea
       {/* Arena map */}
       <div className="card rounded-xl p-4">
         <h3 className="font-semibold text-sm mb-4" style={{ color: 'var(--color-text)' }}>
-          Klikněte na zvýrazněnou sekci pro výběr
+          Všechna vaše smluvní místa jsou předvybrána — odznačte ta, která na tuto akci nepotřebujete
         </h3>
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Map */}
@@ -216,12 +222,17 @@ function Step1({ allocations, selectedSkyboxes, setSelectedSkyboxes, selectedSea
 
           {/* Seat picker panel */}
           {activeSeatPickerSection && allClubSections.includes(activeSeatPickerSection) && (
-            <div className="lg:w-80 shrink-0">
+            <div className="lg:w-96 shrink-0">
               <SeatPicker
                 sectionId={activeSeatPickerSection}
                 selectedSeats={selectedSeatsBySection[activeSeatPickerSection] || []}
                 onToggleSeat={(seatKey) => toggleSeat(activeSeatPickerSection, seatKey)}
                 onClose={() => setActiveSeatPickerSection(null)}
+                contractedSeats={
+                  currentPartner?.clubSeatMap?.[activeSeatPickerSection]?.length > 0
+                    ? new Set(currentPartner.clubSeatMap[activeSeatPickerSection])
+                    : undefined
+                }
               />
             </div>
           )}
@@ -278,7 +289,7 @@ function Step1({ allocations, selectedSkyboxes, setSelectedSkyboxes, selectedSea
           <h3 className="font-semibold text-sm mb-3" style={{ color: 'var(--color-text)' }}>
             {t('claim.clubSeats')}
             <span className="font-normal text-xs ml-2" style={{ color: 'var(--color-text-muted)' }}>
-              — klikněte na sekci v mapě nebo níže
+              — klikněte na sekci pro úpravu výběru sedadel
             </span>
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -309,7 +320,7 @@ function Step1({ allocations, selectedSkyboxes, setSelectedSkyboxes, selectedSea
                     )}
                   </div>
                   <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                    5 řad × 12 sedadel · Klikem otevřete výběr
+                    Klikem otevřete výběr sedadel
                   </p>
                 </button>
               )
@@ -725,6 +736,17 @@ export default function ClaimWizardPage() {
     ]).then(([ev, allocs]) => {
       setEvent(ev)
       setAllocations(allocs)
+      // Pre-select all contracted seats (partner can deselect what they don't need)
+      const type1 = allocs.filter(a => a.kind === 'TYPE1')
+      setSelectedSkyboxes(type1.flatMap(a => a.skyboxes || []))
+      const seatsBySection = {}
+      type1.forEach(alloc => {
+        ;(alloc.clubSections || []).forEach(secId => {
+          const contracted = currentPartner?.clubSeatMap?.[secId]
+          seatsBySection[secId] = contracted?.length > 0 ? [...contracted] : []
+        })
+      })
+      setSelectedSeatsBySection(seatsBySection)
       setLoading(false)
     })
   }, [eventId, currentPartner])
@@ -795,6 +817,7 @@ export default function ClaimWizardPage() {
           {step === 1 && (
             <Step1
               allocations={allocations}
+              currentPartner={currentPartner}
               selectedSkyboxes={selectedSkyboxes}
               setSelectedSkyboxes={setSelectedSkyboxes}
               selectedSeatsBySection={selectedSeatsBySection}
