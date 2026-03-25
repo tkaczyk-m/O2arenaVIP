@@ -8,19 +8,19 @@ import { X } from 'lucide-react'
 import { CLUB_SECTIONS, SECTION_UNAVAILABLE } from '@/lib/mockData'
 import clsx from 'clsx'
 
-const ROWS = ['A', 'B', 'C', 'D', 'E']
+const ROWS = [1, 2, 3, 4, 5, 6]
 const SEATS_PER_ROW = 12
 
-export default function SeatPicker({ sectionId, selectedSeats = [], onToggleSeat, onClose }) {
+export default function SeatPicker({ sectionId, selectedSeats = [], onToggleSeat, onClose, unavailable: unavailableProp, contractedSeats }) {
   const section = CLUB_SECTIONS[sectionId]
-  const unavailable = SECTION_UNAVAILABLE[sectionId] || new Set()
+  const unavailable = unavailableProp !== undefined ? unavailableProp : (SECTION_UNAVAILABLE[sectionId] || new Set())
 
   const selectedCount = selectedSeats.length
 
   return (
     <div
       className="card rounded-xl overflow-hidden"
-      style={{ minWidth: 280 }}
+      style={{ minWidth: 360 }}
     >
       {/* Header */}
       <div
@@ -40,6 +40,7 @@ export default function SeatPicker({ sectionId, selectedSeats = [], onToggleSeat
         </div>
         {onClose && (
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 rounded-lg transition-colors"
             style={{ color: 'var(--color-text-muted)' }}
@@ -66,7 +67,7 @@ export default function SeatPicker({ sectionId, selectedSeats = [], onToggleSeat
 
         {/* Seat grid */}
         <div className="space-y-1.5">
-          {ROWS.slice(0, section?.rows || 5).map(row => (
+          {ROWS.slice(0, section?.rows || 6).map(row => (
             <div key={row} className="flex items-center gap-1.5">
               {/* Row label */}
               <div
@@ -77,20 +78,24 @@ export default function SeatPicker({ sectionId, selectedSeats = [], onToggleSeat
               </div>
 
               {/* Seats */}
-              <div className="flex gap-1">
+              <div className="flex gap-0.5">
                 {Array.from({ length: section?.seatsPerRow || SEATS_PER_ROW }, (_, i) => {
                   const seatKey = `${row}-${i + 1}`
-                  const isUnavailable = unavailable.has(seatKey)
+                  // When contractedSeats is provided, only those seats are available (ignore random unavailable)
+                  const isUnavailable = contractedSeats !== undefined
+                    ? !contractedSeats.has(seatKey)
+                    : unavailable.has(seatKey)
                   const isSelected = selectedSeats.includes(seatKey)
 
                   return (
                     <button
+                      type="button"
                       key={seatKey}
                       disabled={isUnavailable}
                       onClick={() => !isUnavailable && onToggleSeat(seatKey)}
                       title={isUnavailable ? 'Nedostupné' : `Řada ${row}, sedadlo ${i + 1}`}
                       className={clsx(
-                        'w-6 h-6 rounded text-xs flex items-center justify-center transition-all duration-100 font-medium',
+                        'w-5 h-5 rounded text-xs flex items-center justify-center transition-all duration-100 font-medium',
                         isUnavailable ? 'seat-unavailable' :
                         isSelected ? 'seat-selected' :
                         'seat-available'
@@ -106,11 +111,11 @@ export default function SeatPicker({ sectionId, selectedSeats = [], onToggleSeat
         </div>
 
         {/* Seat number axis */}
-        <div className="flex gap-1 mt-1 ml-6">
+        <div className="flex gap-0.5 mt-1 ml-6">
           {Array.from({ length: section?.seatsPerRow || SEATS_PER_ROW }, (_, i) => (
             <div
               key={i}
-              className="w-6 text-center text-xs"
+              className="w-5 text-center text-xs"
               style={{ color: 'var(--color-text-subtle)' }}
             >
               {(i + 1) % 2 === 0 ? i + 1 : ''}

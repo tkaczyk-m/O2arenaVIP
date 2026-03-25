@@ -1,23 +1,39 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Save, X, CheckSquare } from 'lucide-react'
+import { Save, X, ChevronLeft } from 'lucide-react'
 import { useAdmin } from '@/context/AdminContext'
 import { SKYBOXES, CLUB_SECTIONS } from '@/lib/mockData'
+import SeatPicker from '@/components/arena/SeatPicker'
 
-// ── Arena Seat Picker (admin mode — all sections selectable) ──────────────────
+// ── Arena map constants ────────────────────────────────────────────────────────
 const W = 800, H = 640
 const CX = W / 2, CY = H / 2
 const RX_OUTER = 340, RY_OUTER = 270
 const RX_INNER = 200, RY_INNER = 155
 
-const SKYBOX_SECTION_MAP = { 'SB-05': 5, 'SB-08': 8, 'SB-09': 9 }
-const ALL_SKYBOX_IDS = Object.keys(SKYBOXES)
-const ALL_CLUB_IDS = Object.keys(CLUB_SECTIONS)
+const ALL_SKYBOX_IDS = Object.keys(SKYBOXES)   // SB-01…SB-28
+const ALL_CLUB_IDS   = Object.keys(CLUB_SECTIONS) // '201'…'226'
 
-function AdminArenaMap({ selectedSkyboxes, selectedSections, onToggleSkybox, onToggleSection }) {
+// ── Allocation type options — add new types here to extend the UI ──────────────
+const ALLOC_TYPE_OPTIONS = [
+  {
+    key: 'TYPE2',
+    label: 'Benefit budget',
+    description: 'Finanční limit pro bezplatné vstupenky z benefitního fondu',
+    extra: { field: 'benefitBudgetCZK', label: 'Budget (Kč)', placeholder: '200000' },
+  },
+  {
+    key: 'TYPE3',
+    label: 'Automatické vstupenky',
+    description: 'Vstupenky přiděleny automaticky bez potvrzení partnera',
+  },
+]
+
+// ── Arena map (admin mode — all segments selectable) ──────────────────────────
+function AdminArenaMap({ selectedSkyboxes, selectedSections, onToggleSkybox, onZoomSection, zoomedSection }) {
   const elements = []
 
-  // Upper ring (3xx) — skyboxes live here
+  // Outer ring — 28 skyboxes, SB-01 to SB-28
   const totalUpper = 28
   for (let i = 0; i < totalUpper; i++) {
     const a1 = (-Math.PI / 2) + i * (2 * Math.PI / totalUpper)
@@ -31,41 +47,32 @@ function AdminArenaMap({ selectedSkyboxes, selectedSections, onToggleSkybox, onT
     const mid = (a1 + a2) / 2
     const lx = CX + (RX_OUTER - 26) * Math.cos(mid)
     const ly = CY + (RY_OUTER - 20) * Math.sin(mid)
-
-    // Check if any skybox maps to this index
-    const sbId = ALL_SKYBOX_IDS.find(id => SKYBOX_SECTION_MAP[id] === i + 1)
-    const isSelected = sbId && selectedSkyboxes.includes(sbId)
+    const sbId = `SB-${String(i + 1).padStart(2, '0')}`
+    const isSelected = selectedSkyboxes.includes(sbId)
 
     elements.push(
-      <g
-        key={`u-${i}`}
-        onClick={sbId ? () => onToggleSkybox(sbId) : undefined}
-        style={{ cursor: sbId ? 'pointer' : 'default' }}
-      >
+      <g key={`u-${i}`} onClick={() => onToggleSkybox(sbId)} style={{ cursor: 'pointer' }}>
         <path
           d={path}
-          fill={isSelected ? 'var(--color-primary)' : sbId ? 'var(--color-primary-light)' : 'var(--color-border)'}
-          fillOpacity={isSelected ? 0.9 : sbId ? 0.3 : 0.4}
+          fill={isSelected ? 'var(--color-primary)' : 'var(--color-primary-light)'}
+          fillOpacity={isSelected ? 0.9 : 0.3}
           stroke="var(--color-surface)"
           strokeWidth="1.5"
         />
-        {sbId && (
-          <text
-            x={lx} y={ly}
-            textAnchor="middle" dominantBaseline="middle"
-            fontSize={isSelected ? 9 : 8}
-            fontWeight="600"
-            fill={isSelected ? '#fff' : 'var(--color-primary)'}
-            style={{ pointerEvents: 'none', userSelect: 'none' }}
-          >
-            {sbId}
-          </text>
-        )}
+        <text
+          x={lx} y={ly}
+          textAnchor="middle" dominantBaseline="middle"
+          fontSize={8} fontWeight="600"
+          fill={isSelected ? '#fff' : 'var(--color-primary)'}
+          style={{ pointerEvents: 'none', userSelect: 'none' }}
+        >
+          {sbId}
+        </text>
       </g>
     )
   }
 
-  // Club ring (2xx) — club sections live here
+  // Club ring — 26 sections, 201–226
   const totalClub = 26
   for (let i = 0; i < totalClub; i++) {
     const a1 = (-Math.PI / 2) + i * (2 * Math.PI / totalClub)
@@ -79,41 +86,33 @@ function AdminArenaMap({ selectedSkyboxes, selectedSections, onToggleSkybox, onT
     const mid = (a1 + a2) / 2
     const lx = CX + (RX_OUTER - 74) * Math.cos(mid)
     const ly = CY + (RY_OUTER - 57) * Math.sin(mid)
-
-    const sectionId = String(200 + i + 1)
-    const isKnown = ALL_CLUB_IDS.includes(sectionId)
-    const isSelected = isKnown && selectedSections.includes(sectionId)
+    const sectionId = String(201 + i)
+    const isSelected = selectedSections.includes(sectionId)
+    const isZoomed  = zoomedSection === sectionId
 
     elements.push(
-      <g
-        key={`c-${i}`}
-        onClick={isKnown ? () => onToggleSection(sectionId) : undefined}
-        style={{ cursor: isKnown ? 'pointer' : 'default' }}
-      >
+      <g key={`c-${i}`} onClick={() => onZoomSection(sectionId)} style={{ cursor: 'pointer' }}>
         <path
           d={path}
-          fill={isSelected ? 'var(--color-primary)' : isKnown ? 'var(--color-primary-light)' : 'var(--color-border)'}
-          fillOpacity={isSelected ? 0.9 : isKnown ? 0.3 : 0.35}
+          fill={isZoomed ? 'var(--color-primary)' : isSelected ? 'var(--color-primary)' : 'var(--color-primary-light)'}
+          fillOpacity={isZoomed ? 1 : isSelected ? 0.7 : 0.3}
           stroke="var(--color-surface)"
           strokeWidth="1.5"
         />
-        {isKnown && (
-          <text
-            x={lx} y={ly}
-            textAnchor="middle" dominantBaseline="middle"
-            fontSize={isSelected ? 8 : 7}
-            fontWeight="600"
-            fill={isSelected ? '#fff' : 'var(--color-primary)'}
-            style={{ pointerEvents: 'none', userSelect: 'none' }}
-          >
-            {sectionId}
-          </text>
-        )}
+        <text
+          x={lx} y={ly}
+          textAnchor="middle" dominantBaseline="middle"
+          fontSize={7} fontWeight="600"
+          fill={isSelected || isZoomed ? '#fff' : 'var(--color-primary)'}
+          style={{ pointerEvents: 'none', userSelect: 'none' }}
+        >
+          {sectionId}
+        </text>
       </g>
     )
   }
 
-  // Floor ring (1xx) — display only
+  // Floor ring (decorative)
   const totalFloor = 22
   for (let i = 0; i < totalFloor; i++) {
     const a1 = (-Math.PI / 2) + i * (2 * Math.PI / totalFloor)
@@ -129,21 +128,9 @@ function AdminArenaMap({ selectedSkyboxes, selectedSections, onToggleSkybox, onT
     )
   }
 
-  // Ice / pitch
   elements.push(
-    <ellipse
-      key="ice"
-      cx={CX} cy={CY}
-      rx={RX_INNER - 10} ry={RY_INNER - 8}
-      fill="var(--color-surface-2)"
-      stroke="var(--color-border)"
-      strokeWidth="1.5"
-    />
-  )
-  elements.push(
-    <text key="ice-label" x={CX} y={CY} textAnchor="middle" dominantBaseline="middle" fontSize={13} fontWeight="600" fill="var(--color-text-subtle)" style={{ userSelect: 'none' }}>
-      {' '}
-    </text>
+    <ellipse key="ice" cx={CX} cy={CY} rx={RX_INNER - 10} ry={RY_INNER - 8}
+      fill="var(--color-surface-2)" stroke="var(--color-border)" strokeWidth="1.5" />
   )
 
   return (
@@ -155,7 +142,7 @@ function AdminArenaMap({ selectedSkyboxes, selectedSections, onToggleSkybox, onT
   )
 }
 
-// ── Form Field ────────────────────────────────────────────────────────────────
+// ── Form helpers ───────────────────────────────────────────────────────────────
 function Field({ label, required, children, hint }) {
   return (
     <div>
@@ -207,7 +194,7 @@ function Section({ title, children }) {
   )
 }
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
+// ── Main page ──────────────────────────────────────────────────────────────────
 export default function ClientFormPage() {
   const { id } = useParams()
   const isNew = !id || id === 'new'
@@ -227,47 +214,75 @@ export default function ClientFormPage() {
     contractTo: '',
     contractAmount: '',
     selectedSkyboxes: [],
-    selectedSections: [],
+    clubSeatMap: {},        // { sectionId: ['1-1', '1-2', ...] }
+    allocType1: false,
+    allocType2: false,
+    allocType3: false,
+    benefitBudgetCZK: '',
   })
+  const [zoomedSection, setZoomedSection] = useState(null)
   const [errors, setErrors] = useState({})
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (existing) {
       setForm({
-        companyName: existing.companyName || '',
-        ico: existing.ico || '',
-        address: existing.address || '',
-        contactFirstName: existing.contactPerson?.firstName || '',
-        contactLastName: existing.contactPerson?.lastName || '',
-        contactEmail: existing.contactPerson?.email || '',
-        contractFrom: existing.contract?.validFrom || '',
-        contractTo: existing.contract?.validTo || '',
-        contractAmount: existing.contract?.amountCZK ? String(existing.contract.amountCZK) : '',
-        selectedSkyboxes: existing.seats?.skyboxes || [],
-        selectedSections: existing.seats?.clubSections || [],
+        companyName:        existing.companyName || '',
+        ico:                existing.ico || '',
+        address:            existing.address || '',
+        contactFirstName:   existing.contactPerson?.firstName || '',
+        contactLastName:    existing.contactPerson?.lastName || '',
+        contactEmail:       existing.contactPerson?.email || '',
+        contractFrom:       existing.contract?.validFrom || '',
+        contractTo:         existing.contract?.validTo || '',
+        contractAmount:     existing.contract?.amountCZK ? String(existing.contract.amountCZK) : '',
+        selectedSkyboxes:   existing.seats?.skyboxes || [],
+        clubSeatMap:        existing.clubSeatMap || {},
+        allocType1:         existing.allocationKinds?.includes('TYPE1') || false,
+        allocType2:         existing.allocationKinds?.includes('TYPE2') || false,
+        allocType3:         existing.allocationKinds?.includes('TYPE3') || false,
+        benefitBudgetCZK:   existing.benefitBudgetCZK ? String(existing.benefitBudgetCZK) : '',
       })
     }
   }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Derived: sections with at least 1 seat selected
+  const selectedSections = Object.keys(form.clubSeatMap).filter(k => (form.clubSeatMap[k] || []).length > 0)
+
   const set = (key) => (val) => setForm(f => ({ ...f, [key]: val }))
 
-  const toggleSkybox = (id) => {
+  const toggleSkybox = (sbId) => {
     setForm(f => ({
       ...f,
-      selectedSkyboxes: f.selectedSkyboxes.includes(id)
-        ? f.selectedSkyboxes.filter(s => s !== id)
-        : [...f.selectedSkyboxes, id],
+      selectedSkyboxes: f.selectedSkyboxes.includes(sbId)
+        ? f.selectedSkyboxes.filter(s => s !== sbId)
+        : [...f.selectedSkyboxes, sbId],
     }))
   }
 
-  const toggleSection = (id) => {
+  const toggleSectionSeat = (sectionId, seatKey) => {
+    setForm(f => {
+      const current = f.clubSeatMap[sectionId] || []
+      const updated = current.includes(seatKey)
+        ? current.filter(s => s !== seatKey)
+        : [...current, seatKey]
+      return { ...f, clubSeatMap: { ...f.clubSeatMap, [sectionId]: updated } }
+    })
+  }
+
+  const removeSeat = (sectionId, seatKey) => {
     setForm(f => ({
       ...f,
-      selectedSections: f.selectedSections.includes(id)
-        ? f.selectedSections.filter(s => s !== id)
-        : [...f.selectedSections, id],
+      clubSeatMap: { ...f.clubSeatMap, [sectionId]: (f.clubSeatMap[sectionId] || []).filter(s => s !== seatKey) },
     }))
+  }
+
+  const clearSection = (sectionId) => {
+    setForm(f => ({ ...f, clubSeatMap: { ...f.clubSeatMap, [sectionId]: [] } }))
+  }
+
+  const handleZoomSection = (sectionId) => {
+    setZoomedSection(prev => prev === sectionId ? null : sectionId)
   }
 
   const validate = () => {
@@ -280,6 +295,8 @@ export default function ClientFormPage() {
     if (!form.contractFrom) e.contractFrom = 'Povinné pole'
     if (!form.contractTo) e.contractTo = 'Povinné pole'
     if (!form.contractAmount || isNaN(Number(form.contractAmount))) e.contractAmount = 'Zadejte číslo'
+    if (form.allocType2 && (!form.benefitBudgetCZK || isNaN(Number(form.benefitBudgetCZK)))) e.benefitBudgetCZK = 'Zadejte číslo'
+    if (!form.allocType1 && !form.allocType2 && !form.allocType3) e.allocTypes = 'Vyberte alespoň jeden typ alokace'
     return e
   }
 
@@ -291,50 +308,74 @@ export default function ClientFormPage() {
     setSaving(true)
     await new Promise(r => setTimeout(r, 400))
 
+    const firstName = form.contactFirstName.trim()
+    const lastName  = form.contactLastName.trim()
+    const email     = form.contactEmail.trim()
+    const initials  = (firstName[0] + (lastName[0] || '')).toUpperCase()
+
+    const allocationKinds = [
+      ...(form.allocType1 ? ['TYPE1'] : []),
+      ...(form.allocType2 ? ['TYPE2'] : []),
+      ...(form.allocType3 ? ['TYPE3'] : []),
+    ]
+
     const data = {
       brandId: activeBrand?.key || 'o2arena',
       companyName: form.companyName.trim(),
       ico: form.ico.trim(),
       address: form.address.trim(),
-      contactPerson: {
-        firstName: form.contactFirstName.trim(),
-        lastName: form.contactLastName.trim(),
-        email: form.contactEmail.trim(),
-      },
+      contactPerson: { firstName, lastName, email },
       contract: {
         id: existing?.contract?.id || `VIP-${Date.now()}`,
+        type: existing?.contract?.type || 'Benefit Partner',
         validFrom: form.contractFrom,
         validTo: form.contractTo,
         amountCZK: Number(form.contractAmount),
-        ...(existing?.contract || {}),
+        accountManagerName:  existing?.contract?.accountManagerName  || '',
+        accountManagerEmail: existing?.contract?.accountManagerEmail || '',
+        accountManagerPhone: existing?.contract?.accountManagerPhone || '',
       },
       seats: {
         skyboxes: form.selectedSkyboxes,
-        clubSections: form.selectedSections,
+        clubSections: selectedSections,
       },
-      // Keep B2B SPA fields
-      type1Allocation: (form.selectedSkyboxes.length || form.selectedSections.length)
-        ? { skyboxes: form.selectedSkyboxes, clubSections: form.selectedSections }
-        : existing?.type1Allocation || null,
-      allocationKinds: existing?.allocationKinds || [],
-      benefitBudgetCZK: existing?.benefitBudgetCZK || 0,
+      clubSeatMap: form.clubSeatMap,
+      type1Allocation: form.allocType1
+        ? { skyboxes: form.selectedSkyboxes, clubSections: selectedSections }
+        : null,
+      allocationKinds,
+      benefitBudgetCZK: form.allocType2 ? (Number(form.benefitBudgetCZK) || 0) : 0,
       spentBenefitCZK: existing?.spentBenefitCZK || 0,
     }
 
     if (isNew) {
-      addPartner({ ...data, id: `partner-${Date.now()}`, userId: null })
+      const partnerId = `partner-${Date.now()}`
+      const userId    = `user-${Date.now()}`
+      addPartner({
+        ...data,
+        id: partnerId,
+        users: [{
+          id: userId,
+          partnerId,
+          name: `${firstName} ${lastName}`,
+          email,
+          role: 'admin',
+          initials,
+          active: true,
+        }],
+      })
     } else {
-      updatePartner(existing.id, data)
+      const existingUsers = existing.users || []
+      const updatedUsers = existingUsers.length > 0
+        ? existingUsers.map(u => u.role === 'admin' ? { ...u, name: `${firstName} ${lastName}`, email, initials } : u)
+        : [{ id: `user-${Date.now()}`, partnerId: existing.id, name: `${firstName} ${lastName}`, email, role: 'admin', initials, active: true }]
+      updatePartner(existing.id, { ...data, users: updatedUsers })
     }
 
     navigate('/admin-clients/clients')
   }
 
-  const err = (key) => errors[key] ? (
-    <p className="text-xs mt-1 text-red-500">{errors[key]}</p>
-  ) : null
-
-  const allSelected = [...form.selectedSkyboxes, ...form.selectedSections.map(s => `Sek. ${s}`)]
+  const err = (key) => errors[key] ? <p className="text-xs mt-1 text-red-500">{errors[key]}</p> : null
 
   return (
     <div>
@@ -353,7 +394,7 @@ export default function ClientFormPage() {
       {/* Tabs */}
       <div
         className="rounded-t-xl flex items-center"
-        style={{ backgroundColor: 'var(--color-surface)', borderBottom: '1px solid var(--color-border)', border: '1px solid var(--color-border)', borderBottomWidth: 0 }}
+        style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderBottomWidth: 0 }}
       >
         <button
           onClick={() => navigate('/admin-clients/clients')}
@@ -407,7 +448,7 @@ export default function ClientFormPage() {
                 {err('contactLastName')}
               </Field>
               <div className="col-span-2">
-                <Field label="E-mail (budoucí přihlášení do B2B portálu)" required>
+                <Field label="E-mail (přihlášení do B2B portálu)" required>
                   <Input value={form.contactEmail} onChange={set('contactEmail')} placeholder="kontakt@firma.cz" type="email" required />
                   {err('contactEmail')}
                 </Field>
@@ -433,87 +474,187 @@ export default function ClientFormPage() {
             </div>
           </Section>
 
-          {/* Section 4: Seats */}
+          {/* Section 4: Seats — only visible when TYPE1 is enabled */}
+          {form.allocType1 && (
           <Section title="Přidělená místa">
-            <div className="flex gap-6">
-              {/* Arena map */}
+            <p className="text-xs" style={{ color: 'var(--color-text-subtle)' }}>
+              <strong>Skybox:</strong> kliknutím na segment ve vnějším kruhu přiřaďte skybox. &nbsp;
+              <strong>Klubová místa:</strong> kliknutím na segment ve vnitřním kruhu se zobrazí výběr sedadel.
+            </p>
+
+            <div className="flex gap-6 items-start">
+              {/* Left: arena map or seat picker */}
               <div className="flex-1 min-w-0">
-                <p className="text-xs mb-3" style={{ color: 'var(--color-text-subtle)' }}>
-                  Kliknutím na zvýrazněné sekce přiřaďte partnerovi skybox nebo sekci hlediště.
-                </p>
-                <AdminArenaMap
-                  selectedSkyboxes={form.selectedSkyboxes}
-                  selectedSections={form.selectedSections}
-                  onToggleSkybox={toggleSkybox}
-                  onToggleSection={toggleSection}
-                />
+                {zoomedSection ? (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => setZoomedSection(null)}
+                      className="flex items-center gap-1 text-xs mb-3 transition-colors"
+                      style={{ color: 'var(--color-primary)' }}
+                    >
+                      <ChevronLeft size={14} />
+                      Zpět na mapu
+                    </button>
+                    <SeatPicker
+                      sectionId={zoomedSection}
+                      selectedSeats={form.clubSeatMap[zoomedSection] || []}
+                      onToggleSeat={(seatKey) => toggleSectionSeat(zoomedSection, seatKey)}
+                      unavailable={new Set()}
+                    />
+                  </div>
+                ) : (
+                  <AdminArenaMap
+                    selectedSkyboxes={form.selectedSkyboxes}
+                    selectedSections={selectedSections}
+                    onToggleSkybox={toggleSkybox}
+                    onZoomSection={handleZoomSection}
+                    zoomedSection={zoomedSection}
+                  />
+                )}
               </div>
 
-              {/* Selection summary */}
-              <div className="w-52 shrink-0">
-                <p className="text-xs font-medium mb-2" style={{ color: 'var(--color-text)' }}>Přiřazená místa</p>
-
-                {/* Skyboxes */}
-                <div className="mb-3">
-                  <p className="text-xs mb-1.5" style={{ color: 'var(--color-text-subtle)' }}>Skybox</p>
-                  <div className="space-y-1">
-                    {ALL_SKYBOX_IDS.map(id => (
-                      <label key={id} className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={form.selectedSkyboxes.includes(id)}
-                          onChange={() => toggleSkybox(id)}
-                          className="rounded"
-                          style={{ accentColor: 'var(--color-primary)' }}
-                        />
-                        <span className="text-xs" style={{ color: 'var(--color-text)' }}>
-                          {SKYBOXES[id].label}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Club sections */}
+              {/* Right: selection summary */}
+              <div className="w-56 shrink-0 space-y-4">
+                {/* Selected skyboxes */}
                 <div>
-                  <p className="text-xs mb-1.5" style={{ color: 'var(--color-text-subtle)' }}>Sekce hlediště</p>
-                  <div className="space-y-1">
-                    {ALL_CLUB_IDS.map(id => (
-                      <label key={id} className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={form.selectedSections.includes(id)}
-                          onChange={() => toggleSection(id)}
-                          className="rounded"
-                          style={{ accentColor: 'var(--color-primary)' }}
-                        />
-                        <span className="text-xs" style={{ color: 'var(--color-text)' }}>
-                          {CLUB_SECTIONS[id].label}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Summary chips */}
-                {allSelected.length > 0 && (
-                  <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--color-border)' }}>
-                    <p className="text-xs mb-1.5" style={{ color: 'var(--color-text-subtle)' }}>Vybráno:</p>
+                  <p className="text-xs font-medium mb-1.5" style={{ color: 'var(--color-text)' }}>
+                    Skybox ({form.selectedSkyboxes.length})
+                  </p>
+                  {form.selectedSkyboxes.length > 0 ? (
                     <div className="flex flex-wrap gap-1">
-                      {allSelected.map(s => (
+                      {form.selectedSkyboxes.map(id => (
                         <span
-                          key={s}
-                          className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                          style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-primary-fg)' }}
+                          key={id}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium cursor-pointer"
+                          style={{ backgroundColor: 'var(--color-primary)', color: '#fff' }}
+                          onClick={() => toggleSkybox(id)}
+                          title="Kliknutím odeberete"
                         >
-                          {s}
+                          {id} <X size={10} />
                         </span>
                       ))}
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    <p className="text-xs" style={{ color: 'var(--color-text-subtle)' }}>Žádný skybox</p>
+                  )}
+                </div>
+
+                {/* Selected club seats as individual KS badges */}
+                <div>
+                  <p className="text-xs font-medium mb-1.5" style={{ color: 'var(--color-text)' }}>
+                    Klubová místa ({selectedSections.reduce((n, s) => n + (form.clubSeatMap[s]?.length || 0), 0)} sed.)
+                  </p>
+                  {selectedSections.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {selectedSections.flatMap(sectionId =>
+                        (form.clubSeatMap[sectionId] || []).map(seatKey => (
+                          <span
+                            key={`${sectionId}-${seatKey}`}
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium cursor-pointer"
+                            style={{ backgroundColor: 'var(--color-primary)', color: '#fff' }}
+                            onClick={() => removeSeat(sectionId, seatKey)}
+                            title="Kliknutím odeberete"
+                          >
+                            KS-{sectionId}-{seatKey} <X size={9} />
+                          </span>
+                        ))
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs" style={{ color: 'var(--color-text-subtle)' }}>Žádná sedadla</p>
+                  )}
+                </div>
               </div>
             </div>
+          </Section>
+          )}
+
+          {/* Section 5: Allocation types */}
+          <Section title="Typy alokace">
+            {errors.allocTypes && (
+              <p className="text-xs text-red-500 -mt-2">{errors.allocTypes}</p>
+            )}
+
+            {/* TYPE1 — real checkbox */}
+            <label
+              className="flex items-start gap-3 p-3 rounded-lg cursor-pointer"
+              style={{
+                backgroundColor: form.allocType1 ? 'var(--color-primary)' + '10' : 'var(--color-surface-2)',
+                border: '1px solid var(--color-border)',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={form.allocType1}
+                onChange={e => {
+                  const checked = e.target.checked
+                  setForm(f => ({
+                    ...f,
+                    allocType1: checked,
+                    // Clear seats when TYPE1 is disabled
+                    ...(checked ? {} : { selectedSkyboxes: [], clubSeatMap: {} }),
+                  }))
+                  if (!checked) setZoomedSection(null)
+                }}
+                className="mt-0.5"
+                style={{ accentColor: 'var(--color-primary)' }}
+              />
+              <div>
+                <p className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>
+                  TYPE1 — Smluvní místa
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                  Skybox nebo klubová sekce sjednaná ve smlouvě. Po zaškrtnutí se zobrazí mapa arény pro výběr míst.
+                </p>
+              </div>
+            </label>
+
+            {/* Other allocation types */}
+            {ALLOC_TYPE_OPTIONS.map(opt => {
+              const isChecked = form[`allocType${opt.key.slice(-1) === '2' ? '2' : '3'}`]
+              const formKey = opt.key === 'TYPE2' ? 'allocType2' : 'allocType3'
+              return (
+                <div key={opt.key}>
+                  <label
+                    className="flex items-start gap-3 p-3 rounded-lg cursor-pointer"
+                    style={{
+                      backgroundColor: isChecked ? 'var(--color-primary)' + '10' : 'var(--color-surface-2)',
+                      border: '1px solid var(--color-border)',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={e => setForm(f => ({ ...f, [formKey]: e.target.checked }))}
+                      className="mt-0.5"
+                      style={{ accentColor: 'var(--color-primary)' }}
+                    />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>
+                        {opt.key} — {opt.label}
+                      </p>
+                      <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                        {opt.description}
+                      </p>
+                      {/* Extra field (e.g. budget for TYPE2) */}
+                      {opt.extra && isChecked && (
+                        <div className="mt-3">
+                          <Field label={opt.extra.label}>
+                            <Input
+                              value={form[opt.extra.field]}
+                              onChange={set(opt.extra.field)}
+                              placeholder={opt.extra.placeholder}
+                            />
+                            {err(opt.extra.field)}
+                          </Field>
+                        </div>
+                      )}
+                    </div>
+                  </label>
+                </div>
+              )
+            })}
           </Section>
 
           {/* Actions */}

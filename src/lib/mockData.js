@@ -1,4 +1,5 @@
 import { getPublishedEvents, getEvent as storeGetEvent } from '@/lib/eventStore'
+import { getUserById as getStoreUser, getPartner as getStorePartner } from '@/lib/partnerStore'
 
 /**
  * Complete mock data for the VIP Partner Portal.
@@ -67,39 +68,40 @@ export const CATERING_ADDONS = [
 
 // ─── ARENA MAP DEFINITION ──────────────────────────────────────────────────────
 // Club sections (2xx) in the arena
-export const CLUB_SECTIONS = {
-  '222': { id: '222', label: 'Sek. 222', rows: 5, seatsPerRow: 12 },
-  '205': { id: '205', label: 'Sek. 205', rows: 5, seatsPerRow: 12 },
-  '209': { id: '209', label: 'Sek. 209', rows: 5, seatsPerRow: 12 },
-}
+// 26 club sections: 201–226, each with 6 rows × 12 seats
+export const CLUB_SECTIONS = Object.fromEntries(
+  Array.from({ length: 26 }, (_, i) => {
+    const id = String(201 + i)
+    return [id, { id, label: `Sek. ${id}`, rows: 6, seatsPerRow: 12 }]
+  })
+)
 
-// Skyboxes (3xx range)
-export const SKYBOXES = {
-  'SB-05': { id: 'SB-05', label: 'Skybox 05', section: '366', capacity: 10, floor: 3 },
-  'SB-08': { id: 'SB-08', label: 'Skybox 08', section: '308', capacity: 10, floor: 3 },
-  'SB-09': { id: 'SB-09', label: 'Skybox 09', section: '308', capacity: 8, floor: 3 },
-}
+// 28 skyboxes: SB-01–SB-28 (one per outer-ring segment)
+export const SKYBOXES = Object.fromEntries(
+  Array.from({ length: 28 }, (_, i) => {
+    const num = String(i + 1).padStart(2, '0')
+    const id = `SB-${num}`
+    return [id, { id, label: `Skybox ${num}`, capacity: 10, floor: 3 }]
+  })
+)
 
 // Generate seat unavailability (random ~20% per section, stable)
 function genUnavailable(sectionId, rows, seatsPerRow) {
   const unavailable = new Set()
-  // Use deterministic pattern based on section id
   const seed = sectionId.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
-  for (let r = 0; r < rows; r++) {
+  for (let r = 1; r <= rows; r++) {
     for (let s = 1; s <= seatsPerRow; s++) {
-      if ((seed * (r + 1) * s) % 7 === 0) {
-        unavailable.add(`${String.fromCharCode(65 + r)}-${s}`)
+      if ((seed * r * s) % 7 === 0) {
+        unavailable.add(`${r}-${s}`)
       }
     }
   }
   return unavailable
 }
 
-export const SECTION_UNAVAILABLE = {
-  '222': genUnavailable('222', 5, 12),
-  '205': genUnavailable('205', 5, 12),
-  '209': genUnavailable('209', 5, 12),
-}
+export const SECTION_UNAVAILABLE = Object.fromEntries(
+  Array.from({ length: 26 }, (_, i) => [String(201 + i), genUnavailable(String(201 + i), 6, 12)])
+)
 
 // ─── PARTNERS ──────────────────────────────────────────────────────────────────
 export const PARTNERS = {
@@ -782,7 +784,7 @@ export function setMockSession(userId) {
 export function getMockSession() {
   if (_currentUserId) return _currentUserId
   const stored = localStorage.getItem('vip_session')
-  if (stored && USERS[stored]) {
+  if (stored && (USERS[stored] || getStoreUser(stored))) {
     _currentUserId = stored
     return stored
   }
@@ -796,13 +798,14 @@ export function clearMockSession() {
 
 export function getCurrentUser() {
   const uid = getMockSession()
-  return uid ? USERS[uid] : null
+  if (!uid) return null
+  return USERS[uid] || getStoreUser(uid) || null
 }
 
 export function getCurrentPartner() {
   const user = getCurrentUser()
   if (!user) return null
-  return PARTNERS[user.partnerId]
+  return PARTNERS[user.partnerId] || getStorePartner(user.partnerId) || null
 }
 
 // ─── ADMIN SESSION ─────────────────────────────────────────────────────────────
@@ -834,7 +837,7 @@ const delay = (ms = 200) => new Promise(r => setTimeout(r, ms))
 
 export async function getEventsForPartner(partnerId, brandKey) {
   await delay()
-  const partner = PARTNERS[partnerId]
+  const partner = PARTNERS[partnerId] || getStorePartner(partnerId)
   if (!partner) return []
 
   const brandEvents = getPublishedEvents(brandKey || 'o2arena')
@@ -849,7 +852,31 @@ export async function getEventsForPartner(partnerId, brandKey) {
   return brandEvents
     .map(event => {
       const allocKey = `${partnerId}:${event.id}`
-      const allocations = EVENT_ALLOCATIONS[allocKey] || []
+      let allocations = EVENT_ALLOCATIONS[allocKey] || []
+
+      // Auto-generate TYPE1 allocation from contracted seats when no explicit record exists
+      if (allocations.length === 0 && partner.allocationKinds?.includes('TYPE1') && partner.type1Allocation) {
+        const t1 = partner.type1Allocation
+        if ((t1.skyboxes?.length > 0) || (t1.clubSections?.length > 0)) {
+          const eventDate = new Date(event.date)
+          const deadlineDate = new Date(eventDate.getTime() - 7 * 24 * 60 * 60 * 1000)
+          const autoAlloc = {
+            id: `ea-auto-${partnerId}-${event.id}`,
+            eventId: event.id,
+            partnerId,
+            kind: 'TYPE1',
+            status: deadlineDate < new Date() ? 'LAPSED' : 'OPTION_PENDING',
+            optionDeadline: deadlineDate.toISOString(),
+            skyboxes: t1.skyboxes || [],
+            clubSections: t1.clubSections || [],
+            venueFeeCZKPerSkybox: t1.skyboxes?.length > 0 ? 28000 : null,
+            venueFeeCZKPerSeat: t1.clubSections?.length > 0 ? 1500 : null,
+            cateringFeeCZKPerSeat: 1200,
+            transactionFeePercent: 5,
+          }
+          allocations = [autoAlloc]
+        }
+      }
 
       // Events with no allocations still appear — shown as informational
       if (allocations.length === 0) {
@@ -886,7 +913,34 @@ export async function getEventDetail(eventId) {
 
 export async function getEventAllocations(partnerId, eventId) {
   await delay()
-  return EVENT_ALLOCATIONS[`${partnerId}:${eventId}`] || []
+  const explicit = EVENT_ALLOCATIONS[`${partnerId}:${eventId}`]
+  if (explicit) return explicit
+
+  // Fall back to auto-generating from contracted seats
+  const partner = PARTNERS[partnerId] || getStorePartner(partnerId)
+  if (partner?.allocationKinds?.includes('TYPE1') && partner.type1Allocation) {
+    const t1 = partner.type1Allocation
+    if ((t1.skyboxes?.length > 0) || (t1.clubSections?.length > 0)) {
+      const event = storeGetEvent(eventId)
+      const eventDate = event ? new Date(event.date) : new Date()
+      const deadlineDate = new Date(eventDate.getTime() - 7 * 24 * 60 * 60 * 1000)
+      return [{
+        id: `ea-auto-${partnerId}-${eventId}`,
+        eventId,
+        partnerId,
+        kind: 'TYPE1',
+        status: deadlineDate < new Date() ? 'LAPSED' : 'OPTION_PENDING',
+        optionDeadline: deadlineDate.toISOString(),
+        skyboxes: t1.skyboxes || [],
+        clubSections: t1.clubSections || [],
+        venueFeeCZKPerSkybox: t1.skyboxes?.length > 0 ? 28000 : null,
+        venueFeeCZKPerSeat: t1.clubSections?.length > 0 ? 1500 : null,
+        cateringFeeCZKPerSeat: 1200,
+        transactionFeePercent: 5,
+      }]
+    }
+  }
+  return []
 }
 
 export async function getOrders(partnerId) {
@@ -902,7 +956,7 @@ export async function getTickets(partnerId) {
 
 export async function getPartner(partnerId) {
   await delay()
-  return PARTNERS[partnerId] || null
+  return PARTNERS[partnerId] || getStorePartner(partnerId) || null
 }
 
 export async function getPartnerUsers(partnerId) {
