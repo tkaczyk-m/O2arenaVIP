@@ -1,6 +1,5 @@
 const STORE_KEY = 'vip_partners'
-const SEED_KEY = 'vip_partners_seed_v'
-const SEED_VERSION = '3'
+const API = '/api/partners'
 
 // ─── Seed data — partners + their B2B SPA users for all 4 brands ──────────────
 
@@ -140,26 +139,69 @@ const SEED_PARTNERS = [
   },
 ]
 
-// ─── Storage helpers ──────────────────────────────────────────────────────────
+// ─── Local cache (sync reads) ─────────────────────────────────────────────────
 
-function loadAll() {
+function loadLocal() {
   try {
     const raw = localStorage.getItem(STORE_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch { return [] }
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
 }
 
-function saveAll(partners) {
+function saveLocal(partners) {
   localStorage.setItem(STORE_KEY, JSON.stringify(partners))
 }
 
-// ─── Init / seed ──────────────────────────────────────────────────────────────
+// ─── Remote (Upstash via /api/partners) ──────────────────────────────────────
 
-export function initPartnerStore() {
-  if (localStorage.getItem(SEED_KEY) !== SEED_VERSION) {
-    saveAll(SEED_PARTNERS)
-    localStorage.setItem(SEED_KEY, SEED_VERSION)
+async function loadRemote() {
+  try {
+    const r = await fetch(API)
+    if (!r.ok) return null
+    const data = await r.json()
+    return Array.isArray(data) ? data : null
+  } catch { return null }
+}
+
+function saveRemote(partners) {
+  fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(partners),
+  }).catch(() => {}) // fire-and-forget
+}
+
+// ─── Unified read/write ───────────────────────────────────────────────────────
+
+function loadAll() {
+  return loadLocal() || []
+}
+
+function saveAll(partners) {
+  saveLocal(partners)
+  saveRemote(partners)
+}
+
+// ─── Init — hydrate from Upstash, seed if empty ───────────────────────────────
+
+export async function initPartnerStore() {
+  const remote = await loadRemote()
+
+  if (remote === null) {
+    // Server unavailable — use local cache or seed locally
+    if (!loadLocal()) saveLocal(SEED_PARTNERS)
+    return
   }
+
+  if (remote.length > 0) {
+    // Server has data — use it as source of truth
+    saveLocal(remote)
+    return
+  }
+
+  // Server is empty — seed both local and remote
+  saveLocal(SEED_PARTNERS)
+  saveRemote(SEED_PARTNERS)
 }
 
 // ─── Read ─────────────────────────────────────────────────────────────────────

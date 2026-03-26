@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { AppProvider, useApp } from '@/context/AppContext'
 import { AdminProvider } from '@/context/AdminContext'
 
@@ -30,9 +31,6 @@ import AdminLoginPage from '@/pages/admin/AdminLoginPage'
 import BrandPickerPage from '@/pages/admin/BrandPickerPage'
 import ClientsListPage from '@/pages/admin/ClientsListPage'
 import ClientFormPage from '@/pages/admin/ClientFormPage'
-
-initStore()
-initPartnerStore()
 
 function ProtectedRoute({ children }) {
   const { currentUser } = useApp()
@@ -91,6 +89,21 @@ function AppRoutes() {
 }
 
 export default function App() {
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    Promise.all([initStore(), initPartnerStore()]).then(() => setReady(true))
+  }, [])
+
+  if (!ready) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9fafb' }}>
+        <div style={{ width: 32, height: 32, border: '3px solid #e5e7eb', borderTopColor: '#6366f1', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+      </div>
+    )
+  }
+
   return (
     <AdminProvider>
       <AppProvider>

@@ -16,8 +16,7 @@
  */
 
 const EVENTS_KEY = 'vip_events'
-const SEED_VERSION_KEY = 'vip_seed_v'
-const CURRENT_VERSION = '3'
+const API = '/api/events'
 
 function sd(days, hour = 19, min = 0) {
   const d = new Date()
@@ -601,25 +600,58 @@ const SEED_EVENTS = [
 
 // ── Store API ──────────────────────────────────────────────────────────────────
 
-export function initStore() {
-  const seeded = localStorage.getItem(SEED_VERSION_KEY)
-  if (seeded !== CURRENT_VERSION) {
-    localStorage.setItem(EVENTS_KEY, JSON.stringify(SEED_EVENTS))
-    localStorage.setItem(SEED_VERSION_KEY, CURRENT_VERSION)
+function loadLocal() {
+  try {
+    const raw = localStorage.getItem(EVENTS_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
+}
+
+function saveLocal(events) {
+  localStorage.setItem(EVENTS_KEY, JSON.stringify(events))
+}
+
+async function loadRemote() {
+  try {
+    const r = await fetch(API)
+    if (!r.ok) return null
+    const data = await r.json()
+    return Array.isArray(data) ? data : null
+  } catch { return null }
+}
+
+function saveRemote(events) {
+  fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(events),
+  }).catch(() => {})
+}
+
+export async function initStore() {
+  const remote = await loadRemote()
+
+  if (remote === null) {
+    if (!loadLocal()) saveLocal(SEED_EVENTS)
+    return
   }
+
+  if (remote.length > 0) {
+    saveLocal(remote)
+    return
+  }
+
+  saveLocal(SEED_EVENTS)
+  saveRemote(SEED_EVENTS)
 }
 
 function loadAll() {
-  try {
-    const raw = localStorage.getItem(EVENTS_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
+  return loadLocal() || []
 }
 
 function saveAll(events) {
-  localStorage.setItem(EVENTS_KEY, JSON.stringify(events))
+  saveLocal(events)
+  saveRemote(events)
 }
 
 /** All events for a brand (admin — includes drafts) */
