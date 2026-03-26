@@ -2,36 +2,12 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Loader2, Building2 } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
-import { setMockSession, USERS, PARTNERS } from '@/lib/mockData'
+import { setMockSession, USERS } from '@/lib/mockData'
+import { getPartnersByBrand, getUserById as getStoreUser } from '@/lib/partnerStore'
 import Footer from '@/components/layout/Footer'
 import clsx from 'clsx'
 
-const PERSONAS = [
-  {
-    key: 'barbora',
-    userId: 'user-barbora',
-    partnerId: 'barbora',
-    initials: 'BC',
-    color: '#0066cc',
-    tagKey: 'personas.barbora',
-  },
-  {
-    key: 'ludek',
-    userId: 'user-ludek',
-    partnerId: 'ludek',
-    initials: 'LP',
-    color: '#7c3aed',
-    tagKey: 'personas.ludek',
-  },
-  {
-    key: 'martin',
-    userId: 'user-martin',
-    partnerId: 'martin',
-    initials: 'MG',
-    color: '#b45309',
-    tagKey: 'personas.martin',
-  },
-]
+const PERSONA_COLORS = ['#0066cc', '#7c3aed', '#b45309', '#0891b2', '#be185d', '#16a34a', '#ea580c']
 
 // PLG decorative circles for default brand
 function PLGBackground() {
@@ -102,14 +78,26 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  const brandPartners = getPartnersByBrand(brand.key)
+  const personas = brandPartners.flatMap((partner, pi) =>
+    (partner.users || []).map((user, ui) => ({
+      userId: user.id,
+      name: user.name,
+      initials: user.initials || user.name.split(' ').map(w => w[0]).join('').slice(0, 2),
+      company: partner.companyName,
+      role: user.role === 'admin' ? 'Správce účtu' : 'Uživatel',
+      color: PERSONA_COLORS[(pi * 2 + ui) % PERSONA_COLORS.length],
+    }))
+  )
+
   const handleLogin = async (userId) => {
     setLoading(true)
     setError('')
     await new Promise(r => setTimeout(r, 700))
-    const user = USERS[userId]
-    const partner = PARTNERS[user.partnerId]
+    const user = USERS[userId] || getStoreUser(userId)
+    if (!user) { setLoading(false); setError('Uživatel nenalezen.'); return }
     setMockSession(userId)
-    login(user, partner)
+    login(user)
     navigate('/dashboard')
   }
 
@@ -119,9 +107,12 @@ export default function LoginPage() {
       setError('Vyplňte e-mail a heslo')
       return
     }
-    // In demo, any credentials work — find which user matches email
-    const matchedUser = Object.values(USERS).find(u => u.email === email)
-    const userId = matchedUser?.id || 'user-barbora'
+    const allUsers = [
+      ...Object.values(USERS),
+      ...brandPartners.flatMap(p => p.users || []),
+    ]
+    const matchedUser = allUsers.find(u => u.email === email)
+    const userId = matchedUser?.id || personas[0]?.userId || 'user-barbora'
     await handleLogin(userId)
   }
 
@@ -248,63 +239,41 @@ export default function LoginPage() {
                 {t('login.demoSubtitle')}
               </p>
               <div className="space-y-2">
-                {PERSONAS.map(persona => {
-                  const info = t(persona.tagKey + '.name') ? {
-                    name: t(persona.tagKey + '.name'),
-                    company: t(persona.tagKey + '.company'),
-                    description: t(persona.tagKey + '.description'),
-                  } : {
-                    name: persona.key,
-                    company: '',
-                    description: '',
-                  }
-                  // Get data directly from translations object
-                  const name = (() => {
-                    try { return t(`personas.${persona.key}.name`) } catch { return persona.key }
-                  })()
-                  const company = (() => {
-                    try { return t(`personas.${persona.key}.company`) } catch { return '' }
-                  })()
-                  const description = (() => {
-                    try { return t(`personas.${persona.key}.description`) } catch { return '' }
-                  })()
-
-                  return (
-                    <button
-                      key={persona.key}
-                      onClick={() => handleLogin(persona.userId)}
-                      disabled={loading}
-                      className="w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-all duration-150 disabled:opacity-50"
-                      style={{
-                        backgroundColor: 'var(--color-surface)',
-                        borderColor: 'var(--color-border)',
-                      }}
-                      onMouseEnter={e => {
-                        e.currentTarget.style.borderColor = brand.primaryColor
-                        e.currentTarget.style.backgroundColor = `${brand.primaryColor}08`
-                      }}
-                      onMouseLeave={e => {
-                        e.currentTarget.style.borderColor = 'var(--color-border)'
-                        e.currentTarget.style.backgroundColor = 'var(--color-surface)'
-                      }}
+                {personas.map(persona => (
+                  <button
+                    key={persona.userId}
+                    onClick={() => handleLogin(persona.userId)}
+                    disabled={loading}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-all duration-150 disabled:opacity-50"
+                    style={{
+                      backgroundColor: 'var(--color-surface)',
+                      borderColor: 'var(--color-border)',
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.borderColor = brand.primaryColor
+                      e.currentTarget.style.backgroundColor = `${brand.primaryColor}08`
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.borderColor = 'var(--color-border)'
+                      e.currentTarget.style.backgroundColor = 'var(--color-surface)'
+                    }}
+                  >
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                      style={{ backgroundColor: persona.color, color: '#fff' }}
                     >
-                      <div
-                        className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                        style={{ backgroundColor: persona.color, color: '#fff' }}
-                      >
-                        {persona.initials}
+                      {persona.initials}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>
+                        {persona.name}
                       </div>
-                      <div className="min-w-0">
-                        <div className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>
-                          {name}
-                        </div>
-                        <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                          {company} · {description}
-                        </div>
+                      <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                        {persona.company} · {persona.role}
                       </div>
-                    </button>
-                  )
-                })}
+                    </div>
+                  </button>
+                ))}
               </div>
             </div>
           </div>

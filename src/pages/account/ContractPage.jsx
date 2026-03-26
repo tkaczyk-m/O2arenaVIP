@@ -193,8 +193,15 @@ export default function ContractPage() {
               )}
               {partner.type1Allocation.clubSections?.length > 0 && (
                 <div className="text-sm mt-1" style={{ color: 'var(--color-text)' }}>
-                  <span style={{ color: 'var(--color-text-muted)' }}>Klubové sekce: </span>
-                  <span className="font-medium">{partner.type1Allocation.clubSections.join(', ')}</span>
+                  <span style={{ color: 'var(--color-text-muted)' }}>Klubová místa: </span>
+                  <span className="font-medium">
+                    {partner.clubSeatMap && Object.values(partner.clubSeatMap).some(v => v?.length > 0)
+                      ? Object.entries(partner.clubSeatMap)
+                          .flatMap(([sId, keys]) => (keys || []).map(k => `KS-${sId}-${k}`))
+                          .join(', ')
+                      : partner.type1Allocation.clubSections.join(', ')
+                    }
+                  </span>
                 </div>
               )}
             </div>

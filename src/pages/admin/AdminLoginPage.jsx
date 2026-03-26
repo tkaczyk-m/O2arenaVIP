@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Building2, Loader2 } from 'lucide-react'
 import { useAdmin } from '@/context/AdminContext'
@@ -13,11 +13,9 @@ export default function AdminLoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // Already logged in
-  if (adminUser) {
-    navigate('/admin-clients/brand', { replace: true })
-    return null
-  }
+  useEffect(() => {
+    if (adminUser) navigate('/admin-clients/brand', { replace: true })
+  }, [adminUser, navigate])
 
   const handleSubmit = async (e) => {
     e.preventDefault()

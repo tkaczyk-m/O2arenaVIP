@@ -125,7 +125,7 @@ export default function AdminEventFormPage() {
 
     setTimeout(() => {
       saveEvent(event)
-      navigate('/admin/events')
+      navigate('/admin-event/events')
     }, 300)
   }
 
@@ -153,10 +153,10 @@ export default function AdminEventFormPage() {
       {/* Page header */}
       <div style={{ marginBottom: '16px' }}>
         <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#222', margin: 0 }}>
-          {isEdit ? 'Úprava termínu události' : 'Nový termín události'}
+          {isEdit ? 'Úprava termínu události' : 'Přidat akci události'}
         </h1>
         <div style={{ fontSize: '12px', color: '#aaa', marginTop: '3px' }}>
-          Domů › Události › Termíny › {isEdit ? 'Změna záznamu' : 'Nový záznam'}
+          Domů › Události › Termíny › {isEdit ? 'Změna záznamu' : 'Přidat akci'}
         </div>
       </div>
 
@@ -164,8 +164,8 @@ export default function AdminEventFormPage() {
       <div style={{ backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: '4px' }}>
         {/* Tabs */}
         <div style={{ display: 'flex', borderBottom: '1px solid #ddd', padding: '0 16px' }}>
-          <TabBtn label="Seznam" onClick={() => navigate('/admin/events')} />
-          <TabBtn label="Nový záznam" active={!isEdit} onClick={!isEdit ? undefined : () => navigate('/admin/events/new')} />
+          <TabBtn label="Seznam" onClick={() => navigate('/admin-event/events')} />
+          <TabBtn label="Přidat akci" active={!isEdit} onClick={!isEdit ? undefined : () => navigate('/admin-event/events/new')} />
           {isEdit && <TabBtn label="Změna záznamu" active />}
         </div>
 
@@ -383,7 +383,7 @@ export default function AdminEventFormPage() {
           }}>
             <button
               type="button"
-              onClick={() => navigate('/admin/events')}
+              onClick={() => navigate('/admin-event/events')}
               style={{ ...btnSecondary }}
             >
               Zpět na seznam
@@ -395,7 +395,7 @@ export default function AdminEventFormPage() {
                   const ev = getEvent(id)
                   if (ev && window.confirm(`Smazat událost „${ev.name}"?`)) {
                     deleteEvent(id)
-                    navigate('/admin/events')
+                    navigate('/admin-event/events')
                   }
                 }}
                 style={btnDanger}

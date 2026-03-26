@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, CalendarDays, Loader2 } from 'lucide-react'
 import { adminLogin, getAdminSession, DEMO_CREDENTIALS } from '@/lib/adminAuth'
@@ -11,10 +11,9 @@ export default function EventsAdminLoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  if (getAdminSession()) {
-    navigate('/admin-event/events', { replace: true })
-    return null
-  }
+  useEffect(() => {
+    if (getAdminSession()) navigate('/admin-event/events', { replace: true })
+  }, [navigate])
 
   const handleSubmit = async (e) => {
     e.preventDefault()

@@ -532,9 +532,14 @@ export default function ClientsListPage() {
                 filtered.map(partner => {
                   const cp = partner.contactPerson
                   const seats = partner.seats
+                  const clubSeats = Object.entries(partner.clubSeatMap || {}).flatMap(
+                    ([sId, keys]) => (keys || []).map(k => `KS-${sId}-${k}`)
+                  )
                   const allSeats = [
                     ...(seats?.skyboxes || []),
-                    ...(seats?.clubSections || []).map(s => `Sek. ${s}`),
+                    ...(clubSeats.length > 0
+                      ? clubSeats
+                      : (seats?.clubSections || []).map(s => `Sek. ${s}`)),
                   ]
                   return (
                     <tr

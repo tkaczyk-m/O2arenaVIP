@@ -78,7 +78,7 @@ export default function AdminEventsPage() {
         {/* Tabs */}
         <div style={{ display: 'flex', borderBottom: '1px solid #ddd', padding: '0 16px' }}>
           <TabBtn label="Seznam" active />
-          <TabBtn label="Nový záznam" onClick={() => navigate('/admin/events/new')} />
+          <TabBtn label="Přidat akci" onClick={() => navigate('/admin-event/events/new')} />
         </div>
 
         {/* Toolbar */}
@@ -93,7 +93,7 @@ export default function AdminEventsPage() {
             />
           </div>
           <button
-            onClick={() => navigate('/admin/events/new')}
+            onClick={() => navigate('/admin-event/events/new')}
             style={{
               display: 'flex', alignItems: 'center', gap: '5px',
               backgroundColor: ADMIN_BLUE, color: '#fff',
@@ -103,7 +103,7 @@ export default function AdminEventsPage() {
             }}
           >
             <Plus size={14} />
-            Nový termín
+            Přidat akci
           </button>
         </div>
 
@@ -137,7 +137,7 @@ export default function AdminEventsPage() {
                   >
                     <td style={{ ...tdStyle, maxWidth: '260px' }}>
                       <button
-                        onClick={() => navigate(`/admin/events/${ev.id}/edit`)}
+                        onClick={() => navigate(`/admin-event/events/${ev.id}/edit`)}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: ADMIN_BLUE, fontWeight: 500, fontSize: '12.5px', padding: 0, textAlign: 'left' }}
                       >
                         {ev.name}
@@ -215,7 +215,7 @@ export default function AdminEventsPage() {
                           icon={Pencil}
                           title="Upravit"
                           color={ADMIN_BLUE}
-                          onClick={() => navigate(`/admin/events/${ev.id}/edit`)}
+                          onClick={() => navigate(`/admin-event/events/${ev.id}/edit`)}
                         />
                         <ActionBtn
                           icon={Trash2}

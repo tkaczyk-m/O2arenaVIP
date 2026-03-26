@@ -21,6 +21,7 @@ import EventsAdminLoginPage from '@/pages/admin/EventsAdminLoginPage'
 import AdminEventsPage from '@/pages/admin/AdminEventsPage'
 import AdminEventFormPage from '@/pages/admin/AdminEventFormPage'
 import { initStore } from '@/lib/eventStore'
+import { initPartnerStore } from '@/lib/partnerStore'
 
 // Clients admin (internal login + brand picker, uses AdminContext)
 import AdminProtectedRoute from '@/components/admin/AdminProtectedRoute'
@@ -31,6 +32,7 @@ import ClientsListPage from '@/pages/admin/ClientsListPage'
 import ClientFormPage from '@/pages/admin/ClientFormPage'
 
 initStore()
+initPartnerStore()
 
 function ProtectedRoute({ children }) {
   const { currentUser } = useApp()

@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback } from 'react'
-import { PARTNERS, ADMIN_USERS, setAdminSession, getAdminSession, clearAdminSession } from '@/lib/mockData'
+import { ADMIN_USERS, setAdminSession, getAdminSession, clearAdminSession } from '@/lib/mockData'
 import { BRANDS } from '@/lib/brands'
+import { getAllPartners, savePartner, deletePartner as storeDeletePartner } from '@/lib/partnerStore'
 
 const AdminContext = createContext(null)
 
@@ -12,7 +13,7 @@ function getInitialBrand() {
 export function AdminProvider({ children }) {
   const [adminUser, setAdminUser] = useState(() => getAdminSession())
   const [activeBrand, setActiveBrandState] = useState(() => getInitialBrand())
-  const [partners, setPartners] = useState(() => Object.values(PARTNERS))
+  const [partners, setPartners] = useState(() => getAllPartners())
 
   const adminLogin = useCallback((user) => {
     setAdminSession(user.id)
@@ -31,15 +32,20 @@ export function AdminProvider({ children }) {
   }, [])
 
   const addPartner = useCallback((partner) => {
-    setPartners(prev => [...prev, partner])
+    savePartner(partner)
+    setPartners(getAllPartners())
   }, [])
 
   const updatePartner = useCallback((id, updates) => {
-    setPartners(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p))
+    const all = getAllPartners()
+    const existing = all.find(p => p.id === id)
+    if (existing) savePartner({ ...existing, ...updates })
+    setPartners(getAllPartners())
   }, [])
 
   const deletePartner = useCallback((id) => {
-    setPartners(prev => prev.filter(p => p.id !== id))
+    storeDeletePartner(id)
+    setPartners(getAllPartners())
   }, [])
 
   return (
